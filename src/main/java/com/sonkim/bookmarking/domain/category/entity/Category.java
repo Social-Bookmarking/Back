@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.category.entity;
 
-import com.sonkim.bookmarking.domain.group.entity.Team;
+import com.sonkim.bookmarking.domain.team.entity.Team;
 import jakarta.persistence.*;
 import lombok.*;
 

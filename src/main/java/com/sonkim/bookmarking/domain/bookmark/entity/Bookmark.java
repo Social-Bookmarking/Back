@@ -2,7 +2,7 @@ package com.sonkim.bookmarking.domain.bookmark.entity;
 
 import com.sonkim.bookmarking.domain.account.entity.Account;
 import com.sonkim.bookmarking.domain.category.entity.Category;
-import com.sonkim.bookmarking.domain.group.entity.Team;
+import com.sonkim.bookmarking.domain.team.entity.Team;
 import jakarta.persistence.*;
 import lombok.*;
 

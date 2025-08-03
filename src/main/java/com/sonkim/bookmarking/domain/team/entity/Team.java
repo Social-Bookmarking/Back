@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.domain.group.entity;
+package com.sonkim.bookmarking.domain.team.entity;
 
 import com.sonkim.bookmarking.domain.account.entity.Account;
 import jakarta.persistence.*;
