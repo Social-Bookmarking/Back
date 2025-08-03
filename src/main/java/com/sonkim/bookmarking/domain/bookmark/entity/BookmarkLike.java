@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "bookmark_like")
 public class BookmarkLike {
 
     @Id

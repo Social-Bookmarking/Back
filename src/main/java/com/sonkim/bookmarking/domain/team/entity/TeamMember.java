@@ -1,7 +1,7 @@
-package com.sonkim.bookmarking.domain.group.entity;
+package com.sonkim.bookmarking.domain.team.entity;
 
 import com.sonkim.bookmarking.domain.account.entity.Account;
-import com.sonkim.bookmarking.domain.group.enums.Permission;
+import com.sonkim.bookmarking.domain.team.enums.Permission;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "team_member")
 public class TeamMember {
 
     @Id

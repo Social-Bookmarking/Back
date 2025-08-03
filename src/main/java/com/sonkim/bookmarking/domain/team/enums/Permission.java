@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.domain.group.enums;
+package com.sonkim.bookmarking.domain.team.enums;
 
 public enum Permission {
     ADMIN,      // 관리자 : 멤버 관리, 북마크 관리
