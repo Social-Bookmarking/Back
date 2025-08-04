@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkTestDto;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,8 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 
-@Service
 @Slf4j
+@RequiredArgsConstructor
+@Service
 public class BookmarkService {
     public BookmarkTestDto getOpenGraphData(String url) {
         // Chrome 옵션 설정
