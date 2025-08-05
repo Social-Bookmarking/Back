@@ -20,7 +20,7 @@ public class BookmarkController {
 
     @ResponseBody
     @GetMapping("/test")
-    public BookmarkTestDto getNaverMapBookmarkTestDto(@RequestParam String url) {
+    public BookmarkTestDto getBookmarkInformation(@RequestParam String url) {
         try {
             return bookmarkService.getOpenGraphData(url);
         } catch (Exception e) {

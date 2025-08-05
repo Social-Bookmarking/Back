@@ -17,7 +17,7 @@ public class Profile {
     private Long id;
 
     // 닉네임
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, unique = true)
     private String nickname;
 
     // 프로필 이미지

@@ -23,8 +23,8 @@ public class Account {
     private Profile profile;
 
     // 아이디
-    @Column(nullable = false)
-    private String userId;
+    @Column(nullable = false, unique = true)
+    private String username;
 
     // 비밀번호
     @Column(nullable = false, columnDefinition = "TEXT")
