@@ -30,4 +30,8 @@ public class Token {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    public void updateToken(String refreshToken, LocalDateTime expiresAt) {
+        this.refreshToken = refreshToken;
+        this.expiresAt = expiresAt;
+    }
 }

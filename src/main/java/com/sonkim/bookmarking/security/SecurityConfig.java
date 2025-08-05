@@ -1,0 +1,92 @@
+package com.sonkim.bookmarking.security;
+
+import com.sonkim.bookmarking.domain.token.service.TokenService;
+import com.sonkim.bookmarking.util.JWTUtil;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JWTUtil jwtUtil;
+    private final TokenService tokenService;
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    // 비밀번호 암호화 담당 컴포넌트
+    @Bean
+    public static PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    // CORS 설정
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        return request -> {
+            CorsConfiguration config = new CorsConfiguration();
+            config.setAllowCredentials(true);    // 인증 정보 포함 허용
+            config.setAllowedOrigins(List.of(
+                    "http://localhost:5173",
+                    "https://localhost:5173",
+                    "http://localhost:8080"
+            ));     // 허용할 도메인 설정
+            config.setAllowedMethods(List.of("*"));     // 모든 HTTP 메서드 허용
+            config.setAllowedHeaders(List.of("*"));     // 모든 헤더 허용
+
+            return config;
+        };
+    }
+
+    // 보안 설정
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
+
+        http
+                // 불필요한 기능 비활성화
+                .csrf(csrf -> csrf.disable())       // csrf 보안 비활성화
+                .httpBasic(httpBasic -> httpBasic.disable())        // http basic auth 기반으로 로그인 인증창이 뜨지 않게 설정
+                .formLogin(formLogin -> formLogin.disable())        // formLogin 비활성화
+                .sessionManagement(sessionManagement -> sessionManagement
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))       // 세션 사용 안함
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));    // CORS 설정 적용
+
+        http
+                // 엔드포인트별 접근 권한 설정
+                .authorizeHttpRequests(auth -> auth
+                        // 기본 페이지, 정적 소스들, 'api/auth/**' 패턴의 URL은 모두 허용
+                        .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // 나머지 요청은 인증 필요
+                        .anyRequest().authenticated()
+                );
+
+        http
+                // 로그인 필터 추가
+                .addFilterAt(new LoginFilter(authenticationManager, jwtUtil, tokenService), UsernamePasswordAuthenticationFilter.class)
+                // JWT 검증 필터 추가
+                .addFilterBefore(new JwtVerificationFilter(jwtUtil), LoginFilter.class);
+
+        return http.build();
+    }
+}
