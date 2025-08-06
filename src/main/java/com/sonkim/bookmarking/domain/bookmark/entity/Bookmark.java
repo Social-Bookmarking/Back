@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.bookmark.entity;
 
 import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.category.entity.Category;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import jakarta.persistence.*;
@@ -60,4 +61,17 @@ public class Bookmark {
     // 수정일
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    public void updateCategory(Category category) {
+        this.category = category;
+    }
+
+    public void update(BookmarkRequestDto dto) {
+        if(dto.getTitle() != null) this.title = dto.getTitle();
+        if(dto.getDescription() != null) this.description = dto.getDescription();
+        if(dto.getImageUrl() != null) this.imageUrl = dto.getImageUrl();
+        if(dto.getLatitude() != null) this.latitude = dto.getLatitude();
+        if(dto.getLongitude() != null) this.longitude = dto.getLongitude();
+        this.updatedAt = LocalDateTime.now();
+    }
 }

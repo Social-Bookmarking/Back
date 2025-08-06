@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Slf4j
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/api/team")
+@RequestMapping("/api/group")
 public class TeamController {
 }

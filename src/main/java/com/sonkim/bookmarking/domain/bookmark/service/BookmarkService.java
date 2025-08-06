@@ -1,104 +1,78 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkTestDto;
+import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.account.service.AccountService;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkCreateDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
+import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
+import com.sonkim.bookmarking.domain.category.entity.Category;
+import com.sonkim.bookmarking.domain.category.service.CategoryService;
+import com.sonkim.bookmarking.domain.team.entity.Team;
+import com.sonkim.bookmarking.domain.team.service.TeamService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class BookmarkService {
-    public BookmarkTestDto getOpenGraphData(String url) {
-        // Chrome 옵션 설정
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless", "--disable-gpu", "--no-sandbox", "--disable-dev-shm-usage");
-        options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
-        WebDriver driver = new ChromeDriver(options);
-        BookmarkTestDto dto = new BookmarkTestDto();
+    private final BookmarkRepository bookmarkRepository;
+    private final CategoryService categoryService;
+    private final TeamService teamService;
+    private final AccountService accountService;
 
-        try {
-            driver.get(url);
-            String finalHtml;
+    // 북마크 등록
+    @Transactional
+    public Bookmark createBookmark(Long userId, BookmarkCreateDto dto) {
+        Account account = accountService.getAccountById(userId);
+        // Team team = teamService.getTeamById(dto.getTeamId());
+        // Category category = categoryService.getCategoryById();
 
-            // 도메인에 따라 로직 분기
-            if (url.contains("map.naver.com")) {
-                // 네이버 지도 처리
-                log.info("네이버 지도 URL 감지. 'entryIframe'을 이용하여 추출");
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-                wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.id("entryIframe")));
-                finalHtml = driver.getPageSource();
+        Bookmark bookmark = Bookmark.builder()
+                .account(account)
+                .team(null)
+                .category(null)
+                .url(dto.getUrl())
+                .title(dto.getTitle())
+                .description(dto.getDescription())
+                .imageUrl(dto.getImageUrl())
+                .latitude(dto.getLatitude())
+                .longitude(dto.getLongitude())
+                .build();
 
-            } else if (url.contains("blog.naver.com")) {
-                // 네이버 블로그 처리
-                log.info("네이버 블로그 URL 감지. 'mainFrame'을 이용하여 추출");
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-                wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.id("mainFrame")));
-                finalHtml = driver.getPageSource();
-
-            } else {
-                // 그 외 일반 사이트 처리
-                log.info("일반 URL 감지. 메인 페이지에서 정보 추출");
-                finalHtml = driver.getPageSource();
-            }
-
-            // Jsoup으로 최종 HTML 파싱
-            Document finalDoc = Jsoup.parse(finalHtml);
-            dto = extractOgTags(finalDoc);
-
-        } catch (Exception e) {
-            log.error("OG 태그 추출 중 오류 발생: {}", e.getMessage());
-        } finally {
-            driver.quit();
-        }
-
-        return dto;
+        return bookmarkRepository.save(bookmark);
     }
 
-    private BookmarkTestDto extractOgTags(Document doc) {
-        BookmarkTestDto dto = new BookmarkTestDto();
+    // 특정 북마크 조회
+    @Transactional(readOnly = true)
+    public Bookmark getBookmarkById(Long bookmarkId) {
+        return bookmarkRepository.findById(bookmarkId)
+                .orElseThrow(() -> new EntityNotFoundException("bookmarkId: " + bookmarkId + " not found"));
+    }
 
-        // "meta[property^=og:]"는 property 속성이 "og:"로 시작하는 모든 meta 태그를 선택합니다.
-        Elements ogTags = doc.select("meta[property^=og:]");
+    // 북마크 정보 갱신
+    @Transactional
+    public void updateBookmark(Long bookmarkId, BookmarkRequestDto dto) {
+        Bookmark bookmark = getBookmarkById(bookmarkId);
 
-        for (Element tag : ogTags) {
-            String property = tag.attr("property");
-            String content = tag.attr("content");
-
-            switch (property) {
-                case "og:title":
-                    dto.setTitle(content);
-                    break;
-                case "og:description":
-                    dto.setDescription(content);
-                    break;
-                case "og:image":
-                    dto.setImage(content);
-                    break;
-                case "og:url":
-                    dto.setUrl(content);
-                    break;
-            }
+        if(dto.getCategoryId() != null) {
+            // Category category = categoryService.getCategoryById();
+            bookmark.updateCategory(null);
         }
 
-        // 만약 og:title이 없다면, 일반 title 태그라도 가져옵니다.
-        if (dto.getTitle() == null || dto.getTitle().isEmpty()) {
-            dto.setTitle(doc.title());
-        }
+        bookmark.update(dto);
+    }
 
-        return dto;
+    // 북마크 삭제
+    @Transactional
+    public void deleteBookmark(Long bookmarkId) {
+        Bookmark bookmark = getBookmarkById(bookmarkId);
+        bookmarkRepository.delete(bookmark);
     }
 }
