@@ -23,4 +23,8 @@ public class ProfileService {
         return profileRepository.save(profile);
     }
 
+    @Transactional(readOnly = true)
+    public Boolean nicknameExists(String nickname) {
+        return profileRepository.existsByNickname(nickname);
+    }
 }

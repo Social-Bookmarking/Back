@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -18,11 +20,6 @@ public class TokenService {
 
     private final TokenRepository tokenRepository;
     private final AccountService accountService;
-
-    @Transactional
-    public void deleteTokenByAccountId(Long accountId) {
-        tokenRepository.deleteTokenByAccountId(accountId);
-    }
 
     @Transactional
     public void saveToken(long accountId, TokenDto dto) {
@@ -40,4 +37,18 @@ public class TokenService {
         tokenRepository.save(newToken);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Token> findByAccountId(long accountId) {
+        return tokenRepository.findByAccountId(accountId);
+    }
+
+    @Transactional
+    public void deleteTokenByRefreshToken(String refreshToken) {
+        tokenRepository.deleteByRefreshToken(CryptoUtil.hash(refreshToken));
+    }
+
+    @Transactional
+    public void deleteTokenByAccountId(Long accountId) {
+        tokenRepository.deleteTokenByAccountId(accountId);
+    }
 }
