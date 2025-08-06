@@ -96,4 +96,20 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         cookie.setPath("/");
         return cookie;
     }
+
+    // 인증 실패 시 오류 메시지 전송
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+
+        // HTTP 상태 코드 401 설정
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        // 에러 메시지 설정
+        String errorMessage = "{\"error\": \"아이디 또는 비밀번호가 일치하지 않습니다.\"}";
+        PrintWriter out = response.getWriter();
+        out.print(errorMessage);
+        out.flush();
+    }
 }
