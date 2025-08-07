@@ -30,6 +30,7 @@ public class TeamMember {
     private Team team;
 
     // 권한
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Permission permission;
 

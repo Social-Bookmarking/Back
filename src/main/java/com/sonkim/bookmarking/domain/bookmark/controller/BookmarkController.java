@@ -28,6 +28,7 @@ public class BookmarkController {
     @PostMapping
     public ResponseEntity<?> createBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @RequestBody BookmarkCreateDto bookmarkCreateDto) {
+        log.info("userId: {}, url: {} 북마크 생성 요청", userDetails.getId(), bookmarkCreateDto.getUrl());
         Bookmark bookmark = bookmarkService.createBookmark(userDetails.getId(), bookmarkCreateDto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("bookmarkId: " + bookmark.getId() + " created");
@@ -43,17 +44,21 @@ public class BookmarkController {
 
     // 북마크 정보 수정
     @PatchMapping("/{bookmarkId}")
-    public ResponseEntity<?> updateBookmark(@PathVariable("bookmarkId") Long bookmarkId,
+    public ResponseEntity<?> updateBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                            @PathVariable("bookmarkId") Long bookmarkId,
                                             @RequestBody BookmarkRequestDto bookmarkRequestDto) {
-        bookmarkService.updateBookmark(bookmarkId, bookmarkRequestDto);
+        log.info("userId: {}, bookmarkId: {} 북마크 수정 요청", userDetails.getId(), bookmarkId);
+        bookmarkService.updateBookmark(userDetails.getId(), bookmarkId, bookmarkRequestDto);
 
         return ResponseEntity.ok("bookmarkId: " + bookmarkId + " updated");
     }
 
     // 북마크 삭제
     @DeleteMapping("/{bookmarkId}")
-    public ResponseEntity<?> deleteBookmark(@PathVariable("bookmarkId") Long bookmarkId) {
-        bookmarkService.deleteBookmark(bookmarkId);
+    public ResponseEntity<?> deleteBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                            @PathVariable("bookmarkId") Long bookmarkId) {
+        log.info("userId: {}, bookmarkId: {} 북마크 삭제 요청", userDetails.getId(), bookmarkId);
+        bookmarkService.deleteBookmark(userDetails.getId(), bookmarkId);
 
         return ResponseEntity.ok("bookmarkId: " + bookmarkId + " deleted");
     }
