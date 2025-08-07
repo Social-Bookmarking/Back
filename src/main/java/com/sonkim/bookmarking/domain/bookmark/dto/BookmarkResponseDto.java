@@ -21,6 +21,7 @@ public class BookmarkResponseDto {
     private Double latitude;
     private Double longitude;
     private LocalDateTime createdAt;
+    private Long likesCount;
 
     public static BookmarkResponseDto fromEntity(Bookmark bookmark) {
         return BookmarkResponseDto.builder()
@@ -34,4 +35,12 @@ public class BookmarkResponseDto {
                 .createdAt(bookmark.getCreatedAt())
                 .build();
     }
+
+    public static BookmarkResponseDto fromEntityWithLikes(Bookmark bookmark, Long likesCount) {
+        BookmarkResponseDto dto = fromEntity(bookmark);
+        dto.likesCount = likesCount;
+
+        return dto;
+    }
+
 }
