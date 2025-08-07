@@ -2,12 +2,9 @@ package com.sonkim.bookmarking.domain.bookmark.service;
 
 import com.sonkim.bookmarking.domain.account.entity.Account;
 import com.sonkim.bookmarking.domain.account.service.AccountService;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkCreateDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
-import com.sonkim.bookmarking.domain.category.entity.Category;
 import com.sonkim.bookmarking.domain.category.service.CategoryService;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
@@ -19,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,10 +32,10 @@ public class BookmarkService {
 
     // 북마크 등록
     @Transactional
-    public Bookmark createBookmark(Long accountId, BookmarkCreateDto dto) {
+    public Bookmark createBookmark(Long accountId, Long teamId, BookmarkRequestDto dto) {
 
         // 요청한 사용자의 그룹 내 역할 확인
-        Permission userPermission = teamMemberService.getUserPermissionInTeam(accountId, dto.getTeamId());
+        Permission userPermission = teamMemberService.getUserPermissionInTeam(accountId, teamId);
 
         // 권한이 VIEWER면 예외 발생
         if (userPermission == Permission.VIEWER) {
@@ -44,7 +43,7 @@ public class BookmarkService {
         }
 
         Account account = accountService.getAccountById(accountId);
-        Team team = teamService.getTeamById(dto.getTeamId());
+        Team team = teamService.getTeamById(teamId);
         // Category category = categoryService.getCategoryById();
 
         Bookmark bookmark = Bookmark.builder()
@@ -66,7 +65,7 @@ public class BookmarkService {
     @Transactional(readOnly = true)
     public Bookmark getBookmarkById(Long bookmarkId) {
         return bookmarkRepository.findById(bookmarkId)
-                .orElseThrow(() -> new EntityNotFoundException("bookmarkId: " + bookmarkId + " not found"));
+                .orElseThrow(() -> new EntityNotFoundException("북마크를 찾을 수 없습니다. bookmarkId=" + bookmarkId));
     }
 
     // 북마크 정보 갱신
@@ -105,5 +104,17 @@ public class BookmarkService {
         }
 
         bookmarkRepository.delete(bookmark);
+    }
+
+    // 그룹 내 모든 북마크 조회
+    @Transactional(readOnly = true)
+    public List<Bookmark> getBookmarksByTeamId(Long teamId) {
+        return bookmarkRepository.getBookmarksByTeam_Id(teamId);
+    }
+
+    // 특정 카테고리에 속한 북마크 조회
+    @Transactional(readOnly = true)
+    public List<Bookmark> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId) {
+        return bookmarkRepository.getBookmarksByTeam_IdAndCategory_Id(teamId, categoryId);
     }
 }

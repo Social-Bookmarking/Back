@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking;
 
+import com.sonkim.bookmarking.exception.DuplicateBookmarkLikeException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,13 +21,22 @@ public class GlobalExceptionHandler {
     // AuthorizationDeniedException 처리
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<?> handleAuthorizationDeniedException(AuthorizationDeniedException e) {
+        log.warn("403(FORBIDDEN) 에러 발생: {}", e.getMessage());
         return buildResponse(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
     // EntityNotFoundException 처리
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleEntityNotFoundException(EntityNotFoundException e) {
+        log.warn("404(NOT_FOUND) 에러 발생: {}", e.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    // '좋아요' 중복 에러 처리
+    @ExceptionHandler(DuplicateBookmarkLikeException.class)
+    public ResponseEntity<?> handleDuplicateBookmarkLikeException(DuplicateBookmarkLikeException e) {
+        log.warn("좋아요 중복 시도 발생: {}", e.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
