@@ -1,6 +1,11 @@
 package com.sonkim.bookmarking.auth.service;
 
 import com.google.common.net.HttpHeaders;
+import com.sonkim.bookmarking.domain.team.entity.Team;
+import com.sonkim.bookmarking.domain.team.entity.TeamMember;
+import com.sonkim.bookmarking.domain.team.enums.Permission;
+import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
+import com.sonkim.bookmarking.domain.team.service.TeamService;
 import com.sonkim.bookmarking.domain.token.dto.TokenDto;
 import com.sonkim.bookmarking.domain.token.entity.Token;
 import com.sonkim.bookmarking.auth.dto.RegisterRequestDto;
@@ -34,14 +39,14 @@ public class AuthService {
     private final AccountRepository accountRepository;
     private final ProfileService profileService;
     private final TokenService tokenService;
+    private final TeamService teamService;
+    private final TeamMemberService teamMemberService;
     private final PasswordEncoder passwordEncoder;
     private final JWTUtil jwtUtil;
 
     // 회원 가입
     @Transactional
     public Account createAccount(RegisterRequestDto dto) {
-
-        log.info("{} 회원가입 요청", dto.toString());
 
         // 아이디 중복 확인
         if (accountRepository.existsByUsername(dto.getUsername())) {
@@ -53,15 +58,31 @@ public class AuthService {
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
+        // 계정 생성 및 저장
         Profile newProfile = profileService.createProfile(dto.getNickname());
-
-        Account account = Account.builder()
+        Account newAccount = Account.builder()
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .profile(newProfile)
                 .build();
+        accountRepository.save(newAccount);
 
-        return accountRepository.save(account);
+        // 기본 개인 그룹 생성
+        Team personalTeam = Team.builder()
+                .name(dto.getNickname() + "님의 개인 공간")
+                .account(newAccount)
+                .build();
+        teamService.saveTeam(personalTeam);
+
+        // 그룹 멤버로 등록 및 ADMIN 권한 부여
+        TeamMember membership = TeamMember.builder()
+                .account(newAccount)
+                .team(personalTeam)
+                .permission(Permission.ADMIN)
+                .build();
+        teamMemberService.save(membership);
+
+        return newAccount;
     }
 
     // 토큰 재발급
@@ -117,6 +138,9 @@ public class AuthService {
         if (refreshToken == null) {
             return new ResponseEntity<>("Refresh token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED);
         }
+
+        Long accountId = jwtUtil.getAccountIdFromJWT(refreshToken);
+        log.info("accountId: {} 로그아웃 요청", accountId);
 
         // DB에서 Refresh Token 삭제
         tokenService.deleteTokenByRefreshToken(refreshToken);

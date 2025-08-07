@@ -24,6 +24,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequestDto dto) {
 
+        log.info("{} 회원가입 요청", dto.toString());
+
         Account newAccount;
 
         try {
