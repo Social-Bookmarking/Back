@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.domain.team.entity;
 
+import com.sonkim.bookmarking.domain.team.dto.TeamDto;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,11 +32,19 @@ public class Team {
     private String description;
 
     // 초대 코드
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 20, unique = true)
     private String inviteCode;
 
     // 생성일
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    public void update(TeamDto.RequestDto requestDto) {
+        if (requestDto.getName() != null) this.name = requestDto.getName();
+        if (requestDto.getDescription() != null) this.description = requestDto.getDescription();
+    }
+
+    public void updateCode(String inviteCode) {
+        this.inviteCode = inviteCode;
+    }
 }

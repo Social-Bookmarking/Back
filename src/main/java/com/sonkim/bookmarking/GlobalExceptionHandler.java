@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking;
 
 import com.sonkim.bookmarking.exception.DuplicateBookmarkLikeException;
+import com.sonkim.bookmarking.exception.MemberAlreadyExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,10 +33,24 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    // IllegalArgumentException 처리
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
+        log.warn("400(BAD_REQUEST) 에러 발생: {}", e.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
     // '좋아요' 중복 에러 처리
     @ExceptionHandler(DuplicateBookmarkLikeException.class)
     public ResponseEntity<?> handleDuplicateBookmarkLikeException(DuplicateBookmarkLikeException e) {
         log.warn("좋아요 중복 시도 발생: {}", e.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // 그룹 중복 가입 처리
+    @ExceptionHandler(MemberAlreadyExistsException.class)
+    public ResponseEntity<?> handleMemberAlreadyExistsException(MemberAlreadyExistsException e) {
+        log.warn("그룹 가입 중복 시도 발생: {}", e.getMessage());
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
