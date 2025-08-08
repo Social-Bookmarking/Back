@@ -37,4 +37,8 @@ public class TeamMember {
     // 그룹 가입일
     @Builder.Default
     private LocalDateTime joinedAt = LocalDateTime.now();
+
+    public void updatePermission(Permission permission) {
+        this.permission = permission;
+    }
 }
