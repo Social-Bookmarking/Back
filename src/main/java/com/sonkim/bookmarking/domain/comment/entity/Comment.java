@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.comment.entity;
 
-import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,7 +26,7 @@ public class Comment {
     // 계정 ID
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    private User user;
 
     // 댓글 내용
     @Column(nullable = false, columnDefinition = "TEXT")

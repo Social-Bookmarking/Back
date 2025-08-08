@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.team.entity;
 
-import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,7 +22,7 @@ public class TeamMember {
     // 계정 ID
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    private User user;
 
     // 그룹 ID
     @ManyToOne(fetch = FetchType.LAZY)

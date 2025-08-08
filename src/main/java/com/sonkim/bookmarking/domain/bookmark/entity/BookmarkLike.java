@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.bookmark.entity;
 
-import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +19,7 @@ public class BookmarkLike {
     // 계정 ID
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    private User user;
 
     // 북마크 ID
     @ManyToOne(fetch = FetchType.LAZY)

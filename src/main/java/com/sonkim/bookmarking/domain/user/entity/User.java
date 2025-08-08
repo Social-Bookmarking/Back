@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.domain.account.entity;
+package com.sonkim.bookmarking.domain.user.entity;
 
 import com.sonkim.bookmarking.domain.profile.entity.Profile;
 import jakarta.persistence.*;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Account {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

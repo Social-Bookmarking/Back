@@ -62,18 +62,18 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         // 인증된 사용자 정보 가져오기
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
-        Long accountId = userDetails.getId();
+        Long userId = userDetails.getId();
         String username = userDetails.getUsername();
 
         // Access Token, Refresh Token 생성
-        TokenDto accessToken = jwtUtil.createAccessToken(accountId, username);
-        TokenDto refreshToken = jwtUtil.createRefreshToken(accountId, username);
+        TokenDto accessToken = jwtUtil.createAccessToken(userId, username);
+        TokenDto refreshToken = jwtUtil.createRefreshToken(userId, username);
 
         // 중복 로그인을 방지하기 위해 기존 토큰 삭제
-        tokenService.deleteTokenByAccountId(accountId);
+        tokenService.deleteTokenByUserId(userId);
 
         // 새로운 Refresh Token 저장
-        tokenService.saveToken(accountId, refreshToken);
+        tokenService.saveToken(userId, refreshToken);
 
         // Refresh Token은 HttpOnly 쿠키에 저장
         response.addCookie(createHttpOnlyCookie(refreshToken.getToken()));

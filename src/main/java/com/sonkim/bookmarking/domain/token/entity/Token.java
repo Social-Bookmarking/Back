@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.token.entity;
 
-import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,7 +20,7 @@ public class Token {
     // 계정 ID
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    private User user;
 
     // 리프레시 토큰
     @Column(nullable = false, columnDefinition = "TEXT")

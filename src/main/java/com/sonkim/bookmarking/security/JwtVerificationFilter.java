@@ -51,11 +51,11 @@ public class JwtVerificationFilter extends OncePerRequestFilter {
             }
 
             // JWT에서 사용자 정보 추출
-            Long accountId = jwtUtil.getAccountIdFromJWT(token);
+            Long userId = jwtUtil.getUserId(token);
             String username = jwtUtil.getUsernameFromJWT(token);
 
             // 인증 객체 생성
-            UserDetailsImpl userDetailsImpl = new UserDetailsImpl(accountId, username);
+            UserDetailsImpl userDetailsImpl = new UserDetailsImpl(userId, username);
             Authentication auth = new UsernamePasswordAuthenticationToken(userDetailsImpl, null, userDetailsImpl.getAuthorities());
 
             // SecurityContext에 인증 정보 저장

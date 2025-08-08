@@ -2,7 +2,7 @@ package com.sonkim.bookmarking.auth.controller;
 
 import com.sonkim.bookmarking.auth.service.AuthService;
 import com.sonkim.bookmarking.auth.dto.RegisterRequestDto;
-import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,15 +26,15 @@ public class AuthController {
 
         log.info("{} 회원가입 요청", dto.toString());
 
-        Account newAccount;
+        User newUser;
 
         try {
-            newAccount = authService.createAccount(dto);
+            newUser = authService.createAccount(dto);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
 
-        return ResponseEntity.ok().body("새로운 계정이 생성되었습니다. accountID = " + newAccount.getId());
+        return ResponseEntity.ok().body("새로운 계정이 생성되었습니다. userId = " + newUser.getId());
     }
 
     @PostMapping("/reissue")
