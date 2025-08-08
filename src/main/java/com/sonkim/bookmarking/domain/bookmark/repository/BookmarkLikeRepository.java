@@ -8,9 +8,9 @@ import java.util.Optional;
 
 @Repository
 public interface BookmarkLikeRepository extends JpaRepository<BookmarkLike, Long> {
-    boolean existsBookmarkLikeByAccount_IdAndBookmark_Id(Long accountId, Long bookmarkId);
+    boolean existsBookmarkLikeByUser_IdAndBookmark_Id(Long userId, Long bookmarkId);
 
     long countBookmarkLikesByBookmark_Id(Long bookmarkId);
 
-    Optional<BookmarkLike> findByAccount_IdAndBookmark_Id(Long accountId, Long bookmarkId);
+    Optional<BookmarkLike> findByUser_IdAndBookmark_Id(Long userId, Long bookmarkId);
 }

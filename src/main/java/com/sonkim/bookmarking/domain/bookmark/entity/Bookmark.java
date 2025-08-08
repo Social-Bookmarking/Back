@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.bookmark.entity;
 
-import com.sonkim.bookmarking.domain.account.entity.Account;
+import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.category.entity.Category;
 import com.sonkim.bookmarking.domain.team.entity.Team;
@@ -23,7 +23,7 @@ public class Bookmark {
     // 계정 ID
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private Account account;
+    private User user;
 
     // 그룹 ID
     @ManyToOne(fetch = FetchType.LAZY)

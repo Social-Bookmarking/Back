@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
-    TeamMember getTeamMemberByAccount_IdAndTeam_Id(Long accountId, Long teamId);
+    TeamMember getTeamMemberByUser_IdAndTeam_Id(Long userID, Long teamId);
 }

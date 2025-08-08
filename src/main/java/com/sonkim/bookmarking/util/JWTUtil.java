@@ -31,22 +31,22 @@ public class JWTUtil {
     }
 
     // Access Token 생성
-    public TokenDto createAccessToken(Long accountId, String username) {
-        return createToken("access", accountId, username, accessTokenExpiration);
+    public TokenDto createAccessToken(Long userId, String username) {
+        return createToken("access", userId, username, accessTokenExpiration);
     }
 
     // Refresh Token 생성
-    public TokenDto createRefreshToken(Long accountId, String username) {
-        return createToken("refresh", accountId, username, refreshTokenExpiration);
+    public TokenDto createRefreshToken(Long userId, String username) {
+        return createToken("refresh", userId, username, refreshTokenExpiration);
     }
 
     // 공통 토큰 생성 로직
-    private TokenDto createToken(String category, Long accountId, String username, long expirationMs) {
+    private TokenDto createToken(String category, Long userId, String username, long expirationMs) {
         long now = System.currentTimeMillis();
         long expiresAt = now + expirationMs;
         String token = Jwts.builder()
                 .claim("category", category)
-                .claim("accountId", accountId)
+                .claim("userId", userId)
                 .claim("username", username)
                 .issuedAt(new Date(now))
                 .expiration(new Date(expiresAt))
@@ -68,9 +68,9 @@ public class JWTUtil {
         return getPayload(token).getExpiration().before(new Date());
     }
 
-    // JWT에서 accountId 추출
-    public Long getAccountIdFromJWT(String token) {
-        return getPayload(token).get("accountId", Long.class);
+    // JWT에서 userId 추출
+    public Long getUserId(String token) {
+        return getPayload(token).get("userId", Long.class);
     }
 
     // JWT에서 username 추출

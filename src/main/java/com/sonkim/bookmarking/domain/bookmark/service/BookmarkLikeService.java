@@ -1,7 +1,7 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
-import com.sonkim.bookmarking.domain.account.entity.Account;
-import com.sonkim.bookmarking.domain.account.service.AccountService;
+import com.sonkim.bookmarking.domain.user.entity.User;
+import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkLike;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookmarkLikeService {
 
     private final BookmarkService bookmarkService;
-    private final AccountService accountService;
+    private final UserService userService;
     private final BookmarkLikeRepository bookmarkLikeRepository;
 
     // 북마크-좋아요 수 조회
@@ -28,18 +28,18 @@ public class BookmarkLikeService {
 
     // 북마크-좋아요 추가
     @Transactional
-    public void createBookmarkLike(Long accountId, Long bookmarkId) {
+    public void createBookmarkLike(Long userId, Long bookmarkId) {
         // 중복 체크
-        if(bookmarkLikeRepository.existsBookmarkLikeByAccount_IdAndBookmark_Id(accountId, bookmarkId)) {
+        if(bookmarkLikeRepository.existsBookmarkLikeByUser_IdAndBookmark_Id(userId, bookmarkId)) {
             throw new DuplicateBookmarkLikeException();
         }
 
-        Account account = accountService.getAccountById(accountId);
+        User user = userService.getUserById(userId);
         Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
 
         BookmarkLike bookmarkLike = BookmarkLike.builder()
                 .bookmark(bookmark)
-                .account(account)
+                .user(user)
                 .build();
 
         bookmarkLikeRepository.save(bookmarkLike);
@@ -47,10 +47,10 @@ public class BookmarkLikeService {
 
     // 북마크-좋아요 취소
     @Transactional
-    public void deleteBookmarkLike(Long accountId, Long bookmarkId) {
+    public void deleteBookmarkLike(Long userId, Long bookmarkId) {
         // 좋아요 정보가 존재하는 경우 삭제 수행
         // 좋아요가 없을 때 삭제 요청이 와도 이미 없다는 목표가 달성되었으므로 예외 발생 x
-        bookmarkLikeRepository.findByAccount_IdAndBookmark_Id(accountId, bookmarkId)
+        bookmarkLikeRepository.findByUser_IdAndBookmark_Id(userId, bookmarkId)
                 .ifPresent(bookmarkLikeRepository::delete);
     }
 }

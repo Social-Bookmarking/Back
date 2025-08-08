@@ -9,8 +9,8 @@ import com.sonkim.bookmarking.domain.team.service.TeamService;
 import com.sonkim.bookmarking.domain.token.dto.TokenDto;
 import com.sonkim.bookmarking.domain.token.entity.Token;
 import com.sonkim.bookmarking.auth.dto.RegisterRequestDto;
-import com.sonkim.bookmarking.domain.account.entity.Account;
-import com.sonkim.bookmarking.domain.account.repository.AccountRepository;
+import com.sonkim.bookmarking.domain.user.entity.User;
+import com.sonkim.bookmarking.domain.user.repository.UserRepository;
 import com.sonkim.bookmarking.domain.profile.entity.Profile;
 import com.sonkim.bookmarking.domain.profile.service.ProfileService;
 import com.sonkim.bookmarking.domain.token.service.TokenService;
@@ -36,7 +36,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
     private final ProfileService profileService;
     private final TokenService tokenService;
     private final TeamService teamService;
@@ -46,10 +46,10 @@ public class AuthService {
 
     // 회원 가입
     @Transactional
-    public Account createAccount(RegisterRequestDto dto) {
+    public User createAccount(RegisterRequestDto dto) {
 
         // 아이디 중복 확인
-        if (accountRepository.existsByUsername(dto.getUsername())) {
+        if (userRepository.existsByUsername(dto.getUsername())) {
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
         }
 
@@ -60,29 +60,29 @@ public class AuthService {
 
         // 계정 생성 및 저장
         Profile newProfile = profileService.createProfile(dto.getNickname());
-        Account newAccount = Account.builder()
+        User newUser = User.builder()
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .profile(newProfile)
                 .build();
-        accountRepository.save(newAccount);
+        userRepository.save(newUser);
 
         // 기본 개인 그룹 생성
         Team personalTeam = Team.builder()
                 .name(dto.getNickname() + "님의 개인 공간")
-                .account(newAccount)
+                .user(newUser)
                 .build();
         teamService.saveTeam(personalTeam);
 
         // 그룹 멤버로 등록 및 ADMIN 권한 부여
         TeamMember membership = TeamMember.builder()
-                .account(newAccount)
+                .user(newUser)
                 .team(personalTeam)
                 .permission(Permission.ADMIN)
                 .build();
         teamMemberService.save(membership);
 
-        return newAccount;
+        return newUser;
     }
 
     // 토큰 재발급
@@ -105,12 +105,12 @@ public class AuthService {
         }
 
         // DB에 저장된 토큰과 비교
-        Long accountId = jwtUtil.getAccountIdFromJWT(refreshToken);
+        Long userId = jwtUtil.getUserId(refreshToken);
         String username = jwtUtil.getUsernameFromJWT(refreshToken);
-        Token storedToken = tokenService.findByAccountId(accountId)
+        Token storedToken = tokenService.findByUserId(userId)
                 .orElseThrow(() -> new EntityNotFoundException("DB에서 Refresh Token을 찾을 수 없습니다."));
 
-        log.info("accountId: {} 토큰 재발급 요청", accountId);
+        log.info("userId: {} 토큰 재발급 요청", userId);
 
         // 일치하지 않는 경우 탈취된 토큰으로 간주하고 DB에서 토큰을 삭제하여 강제 로그아웃 처리
         if (!storedToken.getRefreshToken().equals(CryptoUtil.hash(refreshToken))) {
@@ -119,8 +119,8 @@ public class AuthService {
         }
 
         // Access Token과 Refresh Token 재발급(Rotation)
-        TokenDto accessTokenDto = jwtUtil.createAccessToken(accountId, username);
-        TokenDto refreshTokenDto = jwtUtil.createRefreshToken(accountId, username);
+        TokenDto accessTokenDto = jwtUtil.createAccessToken(userId, username);
+        TokenDto refreshTokenDto = jwtUtil.createRefreshToken(userId, username);
 
         // DB에 저장된 refreshToken 업데이트
         storedToken.updateToken(CryptoUtil.hash(refreshTokenDto.getToken()), refreshTokenDto.getExpiresAt());
@@ -139,8 +139,8 @@ public class AuthService {
             return new ResponseEntity<>("Refresh token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED);
         }
 
-        Long accountId = jwtUtil.getAccountIdFromJWT(refreshToken);
-        log.info("accountId: {} 로그아웃 요청", accountId);
+        Long userId = jwtUtil.getUserId(refreshToken);
+        log.info("userId: {} 로그아웃 요청", userId);
 
         // DB에서 Refresh Token 삭제
         tokenService.deleteTokenByRefreshToken(refreshToken);
