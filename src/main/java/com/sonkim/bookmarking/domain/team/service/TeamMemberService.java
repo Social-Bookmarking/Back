@@ -28,6 +28,11 @@ public class TeamMemberService {
         teamMemberRepository.save(teamMember);
     }
 
+    @Transactional
+    public List<TeamMember> getTeamsByUserId(Long userId) {
+        return teamMemberRepository.findAllByUser_Id(userId);
+    }
+
     @Transactional(readOnly = true)
     public Permission getUserPermissionInTeam(Long userId, Long teamId) {
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(userId, teamId)
@@ -40,6 +45,14 @@ public class TeamMemberService {
     public void validateAdmin(Long userId, Long teamId) {
         Permission permission = getUserPermissionInTeam(userId, teamId);
         if (!permission.equals(Permission.ADMIN)) {
+            throw new AuthorizationDeniedException("해당 명령을 수행할 권한이 없습니다.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void validateEditor(Long userId, Long teamId) {
+        Permission permission = getUserPermissionInTeam(userId, teamId);
+        if (permission.equals(Permission.VIEWER)) {
             throw new AuthorizationDeniedException("해당 명령을 수행할 권한이 없습니다.");
         }
     }
@@ -94,5 +107,25 @@ public class TeamMemberService {
         TeamMember memberToKick = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
         teamMemberRepository.delete(memberToKick);
+    }
+
+    @Transactional
+    public void leaveTeam(Long userId, Long teamId) {
+        log.info("userId: {}, teamId: {}  그룹 탈퇴 요청", userId, teamId);
+
+        // 탈퇴할 멤버 정보 가져오기
+        TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(userId, teamId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
+
+        // ADMIN은 무조건 한 명은 있도록 마지막 남은 ADMIN은 탈퇴 불가능
+        if (member.getPermission().equals(Permission.ADMIN)) {
+            long adminCount = teamMemberRepository.countByTeam_IdAndPermission(teamId, Permission.ADMIN);
+            if (adminCount <= 1) {
+                throw new IllegalStateException("그룹의 관리자는 무조건 한 명 이상 존재해야 합니다.");
+            }
+        }
+
+        // 멤버십 정보 삭제
+        teamMemberRepository.delete(member);
     }
 }

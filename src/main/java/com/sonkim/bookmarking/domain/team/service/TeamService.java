@@ -15,6 +15,9 @@ import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -42,7 +45,7 @@ public class TeamService {
     }
 
     // 그룹 상세정보 조회
-    @Transactional
+    @Transactional(readOnly = true)
     public TeamDto.ResponseDto getTeamDetails(Long teamId) {
         Team team = getTeamById(teamId);
 
@@ -52,6 +55,25 @@ public class TeamService {
                 .ownerId(team.getUser().getId())
                 .ownerName(team.getUser().getProfile().getNickname())
                 .build();
+    }
+
+    // 사용자가 속한 그룹 목록 조회
+    @Transactional(readOnly = true)
+    public List<TeamDto.MyTeamDto> getMyTeams(Long userId) {
+        // DB에서 사용자가 속한 모든 그룹 조회
+        List<TeamMember> memberships = teamMemberService.getTeamsByUserId(userId);
+
+        // 각 멤버십 정보에서 Team 정보를 추출하여 DTO로 반환
+        return memberships.stream()
+                .map(member -> {
+                    Team team = member.getTeam();
+                    return TeamDto.MyTeamDto.builder()
+                            .teamId(team.getId())
+                            .groupName(team.getName())
+                            .description(team.getDescription())
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     // 새로운 그룹 생성

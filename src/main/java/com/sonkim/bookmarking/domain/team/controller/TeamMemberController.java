@@ -46,4 +46,12 @@ public class TeamMemberController {
         teamMemberService.kickMember(userDetails.getId(), groupId, memberId);
         return ResponseEntity.ok().build();
     }
+
+    // 그룹 탈퇴
+    @DeleteMapping("/{groupId}/leave")
+    public ResponseEntity<?> leaveTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                       @PathVariable("groupId") Long groupId) {
+        teamMemberService.leaveTeam(userDetails.getId(), groupId);
+        return ResponseEntity.noContent().build();
+    }
 }
