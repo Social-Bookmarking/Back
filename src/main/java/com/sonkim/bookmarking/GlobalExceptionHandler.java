@@ -40,6 +40,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    // IllegalStateException 처리
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<?> handleIllegalStateException(IllegalStateException e) {
+        log.warn("409(CONFLICT) 에러 발생: {}", e.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
     // '좋아요' 중복 에러 처리
     @ExceptionHandler(DuplicateBookmarkLikeException.class)
     public ResponseEntity<?> handleDuplicateBookmarkLikeException(DuplicateBookmarkLikeException e) {

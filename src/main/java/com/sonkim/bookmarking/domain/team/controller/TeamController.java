@@ -63,7 +63,7 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // 초대코드를 통한 그룹 정보 조회
+    // 초대 코드를 통한 그룹 정보 조회
     @GetMapping("/join")
     public ResponseEntity<?> getTeamDetailsByCode(@RequestParam String code) {
         TeamDto.ResponseDto responseDto = teamService.getTeamPreviewByCode(code);
@@ -71,6 +71,7 @@ public class TeamController {
         return ResponseEntity.ok(responseDto);
     }
 
+    // 초대 코드로 그룹 가입
     @PostMapping("/join")
     public ResponseEntity<?> joinTeamMember(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @RequestBody TeamDto.JoinRequestDto joinRequestDto) {

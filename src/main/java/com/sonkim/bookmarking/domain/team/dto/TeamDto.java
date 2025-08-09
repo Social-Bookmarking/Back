@@ -22,6 +22,15 @@ public class TeamDto {
         private String ownerName;
     }
 
+    // 그룹 정보 조회(owner 제외)
+    @Data
+    @Builder
+    public static class MyTeamDto {
+        private Long teamId;
+        private String groupName;
+        private String description;
+    }
+
     // 그룹 가입 요청
     @Data
     public static class JoinRequestDto {
