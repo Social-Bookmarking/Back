@@ -44,6 +44,12 @@ public class TeamService {
                 .orElseThrow(() -> new EntityNotFoundException("그룹 정보를 찾을 수 없습니다. inviteCode=" + inviteCode));
     }
 
+    @Transactional(readOnly = true)
+    public String getInviteCodeByTeamId(Long teamId) {
+        Team team = getTeamById(teamId);
+        return team.getInviteCode();
+    }
+
     // 그룹 상세정보 조회
     @Transactional(readOnly = true)
     public TeamDto.ResponseDto getTeamDetails(Long teamId) {
@@ -91,6 +97,10 @@ public class TeamService {
                 .description(createDto.getDescription())
                 .build();
         teamRepository.save(newTeam);
+
+        // 초대 코드 생성
+        String inviteCode = generateInviteCode(userId, newTeam.getId());
+        newTeam.updateCode(inviteCode);
 
         // 생성자를 멤버로 추가
         TeamMember member = TeamMember.builder()

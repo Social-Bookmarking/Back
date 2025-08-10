@@ -26,6 +26,7 @@ public class SecurityConfig {
 
     private final JWTUtil jwtUtil;
     private final TokenService tokenService;
+    private final UserAuthenticationEntryPoint userAuthenticationEntryPoint;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -80,6 +81,10 @@ public class SecurityConfig {
                         // 나머지 요청은 인증 필요
                         .anyRequest().authenticated()
                 );
+
+        http
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(userAuthenticationEntryPoint));
 
         http
                 // 로그인 필터 추가

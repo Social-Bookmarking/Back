@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -47,6 +48,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    // HttpRequestMethodNotSupportedException 처리
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<?> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
+        log.warn("405(METHOD_NOT_ALLOWED) 에러 발생: {}", e.getMessage());
+
+        return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, "지원되지 않는 HTTP 메서드 요청입니다.");
+    }
+
     // '좋아요' 중복 에러 처리
     @ExceptionHandler(DuplicateBookmarkLikeException.class)
     public ResponseEntity<?> handleDuplicateBookmarkLikeException(DuplicateBookmarkLikeException e) {
@@ -59,6 +68,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleMemberAlreadyExistsException(MemberAlreadyExistsException e) {
         log.warn("그룹 가입 중복 시도 발생: {}", e.getMessage());
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // 범용 예외 처리
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleException(Exception e) {
+        log.error("예상치 못한 에러 발생", e);
+
+        String errorMsg = "서버 내부 오류가 발생했습니다. 관리자에게 문의해주세요.";
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, errorMsg);
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
