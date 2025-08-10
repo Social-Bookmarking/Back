@@ -2,6 +2,7 @@ package com.sonkim.bookmarking.domain.bookmark.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class TeamBookmarkController {
     // 그룹 내 모든 북마크 조회
     @GetMapping("/{groupId}/bookmarks")
     public ResponseEntity<?> getBookmarksOfGroup(@PathVariable("groupId") Long groupId) {
-        List<Bookmark> bookmarkList = bookmarkService.getBookmarksByTeamId(groupId);
+        List<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamId(groupId);
 
         return ResponseEntity.ok(bookmarkList);
     }
@@ -45,10 +46,7 @@ public class TeamBookmarkController {
     @GetMapping("/{groupId}/categories/{categoryId}/bookmarks")
     public ResponseEntity<?> getBookmarksOfCategory(@PathVariable("groupId") Long groupId,
                                                     @PathVariable("categoryId") Long categoryId) {
-        List<Bookmark> bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId);
-
+        List<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId);
         return ResponseEntity.ok(bookmarkList);
     }
-
-
 }

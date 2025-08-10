@@ -22,7 +22,7 @@ public class BookmarkLikeService {
 
     // 북마크-좋아요 수 조회
     @Transactional(readOnly = true)
-    public Long CountBookmarkLike(Long bookmarkId) {
+    public Long countBookmarkLike(Long bookmarkId) {
         return bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
     }
 

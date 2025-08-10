@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.domain.category.entity;
 
+import com.sonkim.bookmarking.domain.category.dto.CategoryDto;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,5 +27,10 @@ public class Category {
 
     // 카테고리 설명
     @Column(columnDefinition = "TEXT")
-    private String description; // 카테고리 설명
+    private String description;
+
+    public void update(CategoryDto.RequestDto request) {
+        if (request.getName() != null) this.name = request.getName();
+        if (request.getDescription() != null) this.description = request.getDescription();
+    }
 }
