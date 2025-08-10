@@ -3,10 +3,12 @@ package com.sonkim.bookmarking.domain.team.controller;
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.domain.team.dto.TeamDto;
 import com.sonkim.bookmarking.domain.team.entity.Team;
+import com.sonkim.bookmarking.domain.team.service.QrCodeService;
 import com.sonkim.bookmarking.domain.team.service.TeamService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class TeamController {
 
     private final TeamService teamService;
+    private final QrCodeService qrCodeService;
 
     // 새로운 그룹 생성
     @PostMapping
@@ -77,5 +80,27 @@ public class TeamController {
                                             @RequestBody TeamDto.JoinRequestDto joinRequestDto) {
         teamService.joinTeam(userDetails.getId(), joinRequestDto.getInviteCode());
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    // 그룹 초대 코드용 QR 코드 이미지 생성
+    @GetMapping("/{groupId}/invite-qr")
+    public ResponseEntity<?> generateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                @PathVariable("groupId") Long groupId) {
+        try {
+            // 그룹의 초대 코드 가져오기
+            String inviteCode = teamService.getInviteCodeByTeamId(groupId);
+
+            // QR 코드에 담을 URL 생성
+            String joinUrl = "http://localhost:8080/api/groups/join?code=" + inviteCode;    // 차후 도메인으로 수정
+
+            // QR 코드 이미지 생성
+            byte[] qrCodeImage = qrCodeService.generateQrCodeImage(userDetails.getId(), joinUrl);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_PNG)
+                    .body(qrCodeImage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
