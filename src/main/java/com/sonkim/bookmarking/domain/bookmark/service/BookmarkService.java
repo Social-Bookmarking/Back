@@ -1,5 +1,8 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
+import com.sonkim.bookmarking.domain.category.entity.Category;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ import java.util.List;
 public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
+    private final BookmarkLikeRepository bookmarkLikeRepository;
     private final CategoryService categoryService;
     private final TeamService teamService;
     private final TeamMemberService teamMemberService;
@@ -44,12 +49,12 @@ public class BookmarkService {
 
         User user = userService.getUserById(userId);
         Team team = teamService.getTeamById(teamId);
-        // Category category = categoryService.getCategoryById();
+        Category category = categoryService.getCategoryById(dto.getCategoryId());
 
         Bookmark bookmark = Bookmark.builder()
                 .user(user)
                 .team(team)
-                .category(null)
+                .category(category)
                 .url(dto.getUrl())
                 .title(dto.getTitle())
                 .description(dto.getDescription())
@@ -79,8 +84,8 @@ public class BookmarkService {
         }
 
         if(dto.getCategoryId() != null) {
-            // Category category = categoryService.getCategoryById();
-            bookmark.updateCategory(null);
+            Category category = categoryService.getCategoryById(dto.getCategoryId());
+            bookmark.updateCategory(category);
         }
 
         bookmark.update(dto);
@@ -108,13 +113,28 @@ public class BookmarkService {
 
     // 그룹 내 모든 북마크 조회
     @Transactional(readOnly = true)
-    public List<Bookmark> getBookmarksByTeamId(Long teamId) {
-        return bookmarkRepository.getBookmarksByTeam_Id(teamId);
+    public List<BookmarkResponseDto> getBookmarksByTeamId(Long teamId) {
+        List<Bookmark> bookmarks = bookmarkRepository.getBookmarksByTeam_Id(teamId);
+
+        // '좋아요'개수 조회해서 같이 반환
+        return bookmarks.stream()
+                .map(bookmark -> {
+                    Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
+                    return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
+                })
+                .collect(Collectors.toList());
     }
 
     // 특정 카테고리에 속한 북마크 조회
     @Transactional(readOnly = true)
-    public List<Bookmark> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId) {
-        return bookmarkRepository.getBookmarksByTeam_IdAndCategory_Id(teamId, categoryId);
+    public List<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId) {
+        List<Bookmark> bookmarks = bookmarkRepository.getBookmarksByTeam_IdAndCategory_Id(teamId, categoryId);
+
+        return bookmarks.stream()
+                .map(bookmark -> {
+                    Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
+                    return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
+                })
+                .collect(Collectors.toList());
     }
 }

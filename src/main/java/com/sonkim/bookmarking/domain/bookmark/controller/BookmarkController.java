@@ -29,7 +29,7 @@ public class BookmarkController {
     @GetMapping("/{bookmarkId}")
     public ResponseEntity<?> getBookmark(@PathVariable("bookmarkId") Long bookmarkId) {
         Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
-        Long likesCount = bookmarkLikeService.CountBookmarkLike(bookmarkId);
+        Long likesCount = bookmarkLikeService.countBookmarkLike(bookmarkId);
 
         return ResponseEntity.ok(BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount));
     }
