@@ -16,12 +16,11 @@ import com.sonkim.bookmarking.domain.team.service.TeamService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -113,28 +112,24 @@ public class BookmarkService {
 
     // 그룹 내 모든 북마크 조회
     @Transactional(readOnly = true)
-    public List<BookmarkResponseDto> getBookmarksByTeamId(Long teamId) {
-        List<Bookmark> bookmarks = bookmarkRepository.getBookmarksByTeam_Id(teamId);
+    public Page<BookmarkResponseDto> getBookmarksByTeamId(Long teamId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_Id(teamId, pageable);
 
-        // '좋아요'개수 조회해서 같이 반환
-        return bookmarks.stream()
-                .map(bookmark -> {
-                    Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
-                    return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
-                })
-                .collect(Collectors.toList());
+        // BookmarkDto로 변환하여 전달
+        return bookmarks.map(bookmark -> {
+            Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
+            return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
+        });
     }
 
     // 특정 카테고리에 속한 북마크 조회
     @Transactional(readOnly = true)
-    public List<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId) {
-        List<Bookmark> bookmarks = bookmarkRepository.getBookmarksByTeam_IdAndCategory_Id(teamId, categoryId);
+    public Page<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_Id(teamId, categoryId, pageable);
 
-        return bookmarks.stream()
-                .map(bookmark -> {
+        return bookmarks.map(bookmark -> {
                     Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
                     return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
-                })
-                .collect(Collectors.toList());
+                });
     }
 }
