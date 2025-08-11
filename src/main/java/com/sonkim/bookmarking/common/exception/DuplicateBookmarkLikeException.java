@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.exception;
+package com.sonkim.bookmarking.common.exception;
 
 public class DuplicateBookmarkLikeException extends RuntimeException {
     public DuplicateBookmarkLikeException() {

@@ -5,7 +5,7 @@ import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkLike;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
-import com.sonkim.bookmarking.exception.DuplicateBookmarkLikeException;
+import com.sonkim.bookmarking.common.exception.DuplicateBookmarkLikeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

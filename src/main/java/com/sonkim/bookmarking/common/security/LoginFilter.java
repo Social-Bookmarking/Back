@@ -1,11 +1,11 @@
-package com.sonkim.bookmarking.security;
+package com.sonkim.bookmarking.common.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sonkim.bookmarking.auth.dto.LoginRequestDto;
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.domain.token.dto.TokenDto;
 import com.sonkim.bookmarking.domain.token.service.TokenService;
-import com.sonkim.bookmarking.util.JWTUtil;
+import com.sonkim.bookmarking.common.util.JWTUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;

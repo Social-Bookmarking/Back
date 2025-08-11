@@ -1,8 +1,13 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
+import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
+import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkTagRepository;
 import com.sonkim.bookmarking.domain.category.entity.Category;
+import com.sonkim.bookmarking.domain.tag.entity.Tag;
+import com.sonkim.bookmarking.domain.tag.repository.TagRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
@@ -22,6 +27,8 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -29,6 +36,8 @@ public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkLikeRepository bookmarkLikeRepository;
+    private final TagRepository tagRepository;
+    private final BookmarkTagRepository bookmarkTagRepository;
     private final CategoryService categoryService;
     private final TeamService teamService;
     private final TeamMemberService teamMemberService;
@@ -36,7 +45,7 @@ public class BookmarkService {
 
     // 북마크 등록
     @Transactional
-    public Bookmark createBookmark(Long userId, Long teamId, BookmarkRequestDto dto) {
+    public Bookmark createBookmark(Long userId, Long teamId, BookmarkRequestDto request) {
 
         // 요청한 사용자의 그룹 내 역할 확인
         Permission userPermission = teamMemberService.getUserPermissionInTeam(userId, teamId);
@@ -48,28 +57,51 @@ public class BookmarkService {
 
         User user = userService.getUserById(userId);
         Team team = teamService.getTeamById(teamId);
-        Category category = categoryService.getCategoryById(dto.getCategoryId());
+        Category category = categoryService.getCategoryById(request.getCategoryId());
 
         Bookmark bookmark = Bookmark.builder()
                 .user(user)
                 .team(team)
                 .category(category)
-                .url(dto.getUrl())
-                .title(dto.getTitle())
-                .description(dto.getDescription())
-                .imageUrl(dto.getImageUrl())
-                .latitude(dto.getLatitude())
-                .longitude(dto.getLongitude())
+                .url(request.getUrl())
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .imageUrl(request.getImageUrl())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
                 .build();
+        bookmarkRepository.save(bookmark);
 
-        return bookmarkRepository.save(bookmark);
+        List<Long> tagIds = request.getTagIds();
+        if (tagIds != null && !tagIds.isEmpty()) {
+            // ID 리스트로 Tag 엔티티들 조회
+            List<Tag> tags = tagRepository.findAllById(tagIds);
+
+            // 각 Tag에 대해 BookmarkTag 엔티티 생성
+            for (Tag tag : tags) {
+                BookmarkTag bookmarkTag = BookmarkTag.builder()
+                        .bookmark(bookmark)
+                        .tag(tag)
+                        .build();
+                bookmarkTagRepository.save(bookmarkTag);
+            }
+        }
+
+        return bookmark;
     }
 
     // 특정 북마크 조회
     @Transactional(readOnly = true)
     public Bookmark getBookmarkById(Long bookmarkId) {
-        return bookmarkRepository.findById(bookmarkId)
+        return bookmarkRepository.findByIdWithTags(bookmarkId)
                 .orElseThrow(() -> new EntityNotFoundException("북마크를 찾을 수 없습니다. bookmarkId=" + bookmarkId));
+    }
+
+    @Transactional(readOnly = true)
+    public BookmarkResponseDto getBookmarkDtoById(Long bookmarkId) {
+        Bookmark bookmark = getBookmarkById(bookmarkId); // 위에서 수정한 메서드 호출
+        Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
+        return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
     }
 
     // 북마크 정보 갱신
@@ -112,24 +144,22 @@ public class BookmarkService {
 
     // 그룹 내 모든 북마크 조회
     @Transactional(readOnly = true)
-    public Page<BookmarkResponseDto> getBookmarksByTeamId(Long teamId, Pageable pageable) {
+    public PageResponseDto<BookmarkResponseDto> getBookmarksByTeamId(Long teamId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_Id(teamId, pageable);
 
         // BookmarkDto로 변환하여 전달
-        return bookmarks.map(bookmark -> {
-            Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
-            return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
-        });
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> getBookmarkDtoById(bookmark.getId()));
+
+        return new PageResponseDto<>(dtoPage);
     }
 
     // 특정 카테고리에 속한 북마크 조회
     @Transactional(readOnly = true)
-    public Page<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId, Pageable pageable) {
+    public PageResponseDto<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_Id(teamId, categoryId, pageable);
 
-        return bookmarks.map(bookmark -> {
-                    Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmark.getId());
-                    return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
-                });
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> getBookmarkDtoById(bookmark.getId()));
+
+        return new PageResponseDto<>(dtoPage);
     }
 }

@@ -1,7 +1,7 @@
-package com.sonkim.bookmarking.security;
+package com.sonkim.bookmarking.common.security;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
-import com.sonkim.bookmarking.util.JWTUtil;
+import com.sonkim.bookmarking.common.util.JWTUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.SignatureException;

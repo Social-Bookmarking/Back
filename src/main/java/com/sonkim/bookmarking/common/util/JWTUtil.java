@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.util;
+package com.sonkim.bookmarking.common.util;
 
 import com.sonkim.bookmarking.domain.token.dto.TokenDto;
 import io.jsonwebtoken.Claims;

@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     // 그룹 내 모든 북마크 페이징 조회
@@ -16,6 +18,10 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     // 특정 카테고리의 북마크 페이징 조회
     Page<Bookmark> findAllByTeam_IdAndCategory_Id(Long teamId, Long categoryId, Pageable pageable);
+
+    // 북마크 조회 시 북마크-태그와 태그 정보 모두 가져오는 쿼리
+    @Query("SELECT b FROM Bookmark b LEFT JOIN FETCH b.bookmarkTags bt LEFT JOIN FETCH bt.tag WHERE b.id = :id")
+    Optional<Bookmark> findByIdWithTags(@Param("id") Long id);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Bookmark b SET b.category = null WHERE b.category.id = :categoryId")

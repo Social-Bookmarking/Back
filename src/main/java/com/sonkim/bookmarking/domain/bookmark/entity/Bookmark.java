@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -61,6 +63,12 @@ public class Bookmark {
     // 수정일
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    // 북마크-태그 관계
+    @OneToMany(mappedBy = "bookmark", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    private List<BookmarkTag> bookmarkTags = new ArrayList<>();
 
     public void updateCategory(Category category) {
         this.category = category;
