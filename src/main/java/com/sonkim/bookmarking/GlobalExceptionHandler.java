@@ -2,6 +2,7 @@ package com.sonkim.bookmarking;
 
 import com.sonkim.bookmarking.exception.DuplicateBookmarkLikeException;
 import com.sonkim.bookmarking.exception.MemberAlreadyExistsException;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-// @Hidden
+@Hidden
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
