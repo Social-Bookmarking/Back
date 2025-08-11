@@ -75,9 +75,14 @@ public class SecurityConfig {
         http
                 // 엔드포인트별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 기본 페이지, 정적 소스들, 'api/auth/**' 패턴의 URL은 모두 허용
-                        .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/fonts/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // 기본 페이지, 정적 소스들, Swagger 관련 경로, 'api/auth/**' 패턴의 URL은 모두 허용
+                        .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/fonts/**", "/error", "/favicon.ico",
+                                "/api/auth/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**"
+                        ).permitAll()
                         // 나머지 요청은 인증 필요
                         .anyRequest().authenticated()
                 );

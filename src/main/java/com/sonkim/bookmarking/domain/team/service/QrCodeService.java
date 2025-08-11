@@ -14,7 +14,7 @@ import java.io.IOException;
 @Slf4j
 @Service
 public class QrCodeService {
-        public byte[] generateQrCodeImage(Long userId, String url) throws IOException, WriterException {
+    public byte[] generateQrCodeImage(Long userId, String url) throws IOException, WriterException {
         log.info("userId: {}, url: {} QR코드 생성 요청", userId, url);
 
         // 전달된 url을 BitMatrix 형태로 인코딩
