@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.security;
+package com.sonkim.bookmarking.common.security;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -7,7 +7,7 @@ import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
-import com.sonkim.bookmarking.exception.MemberAlreadyExistsException;
+import com.sonkim.bookmarking.common.exception.MemberAlreadyExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

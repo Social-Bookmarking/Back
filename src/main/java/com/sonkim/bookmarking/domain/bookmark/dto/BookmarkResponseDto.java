@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,6 +23,14 @@ public class BookmarkResponseDto {
     private Double longitude;
     private LocalDateTime createdAt;
     private Long likesCount;
+    private List<TagInfo> tags;
+
+    @Data
+    @AllArgsConstructor
+    public static class TagInfo {
+        private Long tagId;
+        private String tagName;
+    }
 
     public static BookmarkResponseDto fromEntity(Bookmark bookmark) {
         return BookmarkResponseDto.builder()
@@ -40,7 +49,16 @@ public class BookmarkResponseDto {
         BookmarkResponseDto dto = fromEntity(bookmark);
         dto.likesCount = likesCount;
 
+        if (bookmark.getBookmarkTags() != null) {
+            List<TagInfo> tagInfos = bookmark.getBookmarkTags().stream()
+                    .map(bookmarkTag -> new TagInfo(
+                            bookmarkTag.getTag().getId(),
+                            bookmarkTag.getTag().getName()
+                    ))
+                    .toList();
+            dto.setTags(tagInfos);
+        }
+
         return dto;
     }
-
 }

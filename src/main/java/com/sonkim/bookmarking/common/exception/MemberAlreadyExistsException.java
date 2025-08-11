@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.exception;
+package com.sonkim.bookmarking.common.exception;
 
 public class MemberAlreadyExistsException extends RuntimeException {
     public MemberAlreadyExistsException() {

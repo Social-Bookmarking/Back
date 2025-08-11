@@ -5,7 +5,7 @@ import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.token.dto.TokenDto;
 import com.sonkim.bookmarking.domain.token.entity.Token;
 import com.sonkim.bookmarking.domain.token.repository.TokenRepository;
-import com.sonkim.bookmarking.util.CryptoUtil;
+import com.sonkim.bookmarking.common.util.CryptoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -3,11 +3,9 @@ package com.sonkim.bookmarking.domain.bookmark.controller;
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
-import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
-import com.sonkim.bookmarking.domain.bookmark.service.BookmarkLikeService;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkOGDto;
-import com.sonkim.bookmarking.util.OGUtil;
+import com.sonkim.bookmarking.common.util.OGUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
-    private final BookmarkLikeService bookmarkLikeService;
 
     @Operation(summary = "특정 북마크 상세 정보 조회", description = "특정 북마크의 상세 정보와 좋아요 개수를 조회합니다.")
     @ApiResponses({
@@ -36,9 +33,8 @@ public class BookmarkController {
     })
     @GetMapping("/{bookmarkId}")
     public ResponseEntity<?> getBookmark(@PathVariable("bookmarkId") Long bookmarkId) {
-        Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
-        Long likesCount = bookmarkLikeService.countBookmarkLike(bookmarkId);
-        return ResponseEntity.ok(BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount));
+        BookmarkResponseDto responseDto = bookmarkService.getBookmarkDtoById(bookmarkId);
+        return ResponseEntity.ok(responseDto);
     }
 
     @Operation(summary = "북마크 정보 수정", description = "북마크의 제목, 설명, 카테고리 등을 수정합니다. 북마크 생성자만 수정할 수 있습니다.")

@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.bookmark.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
+import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
@@ -11,7 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -50,7 +50,7 @@ public class TeamBookmarkController {
     @GetMapping("/{groupId}/bookmarks")
     public ResponseEntity<?> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
                                                  @PageableDefault(sort = "createdAt") Pageable pageable) {
-        Page<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamId(groupId, pageable);
+        PageResponseDto<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamId(groupId, pageable);
         return ResponseEntity.ok(bookmarkList);
     }
 
@@ -63,7 +63,7 @@ public class TeamBookmarkController {
     public ResponseEntity<?> getBookmarksOfCategory(@PathVariable("groupId") Long groupId,
                                                     @PathVariable("categoryId") Long categoryId,
                                                     @PageableDefault(sort = "createdAt") Pageable pageable) {
-        Page<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId, pageable);
+        PageResponseDto<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId, pageable);
         return ResponseEntity.ok(bookmarkList);
     }
 }
