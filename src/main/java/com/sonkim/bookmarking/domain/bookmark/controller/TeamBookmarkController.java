@@ -49,8 +49,20 @@ public class TeamBookmarkController {
     @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공")
     @GetMapping("/{groupId}/bookmarks")
     public ResponseEntity<?> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
+                                                 @RequestParam(required = false) String keyword,
+                                                 @RequestParam(required = false) Long tagId,
                                                  @PageableDefault(sort = "createdAt") Pageable pageable) {
-        PageResponseDto<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamId(groupId, pageable);
+
+        PageResponseDto<BookmarkResponseDto> bookmarkList;
+
+        if (tagId != null) {
+            bookmarkList = bookmarkService.getBookmarksByTagInGroup(groupId, tagId, pageable);
+        } else if (keyword != null && !keyword.isBlank()) {
+            bookmarkList = bookmarkService.searchBookmarksByTeamId(groupId, keyword, pageable);
+        } else {
+            bookmarkList = bookmarkService.getBookmarksByTeamId(groupId, pageable);
+        }
+
         return ResponseEntity.ok(bookmarkList);
     }
 
@@ -62,8 +74,19 @@ public class TeamBookmarkController {
     @GetMapping("/{groupId}/categories/{categoryId}/bookmarks")
     public ResponseEntity<?> getBookmarksOfCategory(@PathVariable("groupId") Long groupId,
                                                     @PathVariable("categoryId") Long categoryId,
+                                                    @RequestParam(required = false) String keyword,
+                                                    @RequestParam(required = false) Long tagId,
                                                     @PageableDefault(sort = "createdAt") Pageable pageable) {
-        PageResponseDto<BookmarkResponseDto> bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId, pageable);
+        PageResponseDto<BookmarkResponseDto> bookmarkList;
+
+        if (tagId != null) {
+            bookmarkList = bookmarkService.getBookmarksByTagInCategory(groupId, categoryId, tagId, pageable);
+        }else if (keyword != null && !keyword.isBlank()) {
+            bookmarkList = bookmarkService.searchBookmarksByTeamIdAndCategoryId(groupId, categoryId, keyword, pageable);
+        } else {
+            bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId, pageable);
+        }
+
         return ResponseEntity.ok(bookmarkList);
     }
 }

@@ -99,7 +99,7 @@ public class BookmarkService {
 
     @Transactional(readOnly = true)
     public BookmarkResponseDto getBookmarkDtoById(Long bookmarkId) {
-        Bookmark bookmark = getBookmarkById(bookmarkId); // 위에서 수정한 메서드 호출
+        Bookmark bookmark = getBookmarkById(bookmarkId);
         Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
         return BookmarkResponseDto.fromEntityWithLikes(bookmark, likesCount);
     }
@@ -162,4 +162,37 @@ public class BookmarkService {
 
         return new PageResponseDto<>(dtoPage);
     }
+
+    // 북마크 검색
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> searchBookmarksByTeamId(Long teamId, String keyword, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndKeyword(teamId, keyword, pageable);
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> getBookmarkDtoById(bookmark.getId()));
+        return new PageResponseDto<>(dtoPage);
+    }
+
+    // 북마크 검색(특정 카테고리 내)
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> searchBookmarksByTeamIdAndCategoryId(Long teamId, Long categoryId, String keyword, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_IdAndKeyword(teamId, categoryId, keyword, pageable);
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> getBookmarkDtoById(bookmark.getId()));
+        return new PageResponseDto<>(dtoPage);
+    }
+
+    // 북마크 태그 검색
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> getBookmarksByTagInGroup(Long teamId, Long tagId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findByTeam_IdAndTag_Id(teamId, tagId, pageable);
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> getBookmarkDtoById(bookmark.getId()));
+        return new PageResponseDto<>(dtoPage);
+    }
+
+    // 북마크 태그 검색(특정 카테고리 내)
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> getBookmarksByTagInCategory(Long teamId, Long categoryId, Long tagId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findByCategory_IdAndTag_Id(teamId, categoryId, tagId, pageable);
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> getBookmarkDtoById(bookmark.getId()));
+        return new PageResponseDto<>(dtoPage);
+    }
+
 }
