@@ -1,0 +1,102 @@
+package com.sonkim.bookmarking.domain.mypage.service;
+
+import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
+import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
+import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
+import com.sonkim.bookmarking.domain.mypage.dto.MyProfileDto;
+import com.sonkim.bookmarking.domain.mypage.dto.PasswordDto;
+import com.sonkim.bookmarking.domain.token.service.TokenService;
+import com.sonkim.bookmarking.domain.user.entity.User;
+import com.sonkim.bookmarking.domain.user.repository.UserRepository;
+import com.sonkim.bookmarking.domain.user.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class MyPageService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final TokenService tokenService;
+    private final BookmarkRepository bookmarkRepository;
+    private final BookmarkService bookmarkService;
+    private final UserService userService;
+
+    @Transactional(readOnly = true)
+    public MyProfileDto.RequestDto getMyProfile(Long userId) {
+        // 프로필 정보 조회
+        User user = userRepository.findByIdWithProfile(userId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
+
+        // DTO로 변환하여 반환
+        return MyProfileDto.RequestDto.builder()
+                .nickname(user.getProfile().getNickname())
+                .imageUrl(user.getProfile().getImageUrl())
+                .build();
+    }
+
+    // 닉네임 변경
+    @Transactional
+    public void updateNickname(Long userId, MyProfileDto.UpdateNicknameRequestDto requestDto) {
+        User user = userRepository.findByIdWithProfile(userId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
+
+        user.getProfile().updateNickname(requestDto.getNickname());
+    }
+
+    // 비밀번호 변경
+    @Transactional
+    public void changePassword(Long userId, PasswordDto passwordDto) {
+        User user = userRepository.findByIdWithProfile(userId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
+
+        // 현재 비밀번호 일치하는지 확인
+        if(!passwordEncoder.matches(passwordDto.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 새 비밀번호로 변경
+        user.updatePassword(passwordEncoder.encode(passwordDto.getCurrentPassword()));
+
+        // refresh token 삭제
+        tokenService.deleteTokenByUserId(userId);
+    }
+
+    // 사용자가 작성한 북마크 조회
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> getMyBookmarks(Long userId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findAllByUser_Id(userId, pageable);
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.getBookmarkDtoById(bookmark.getId()));
+        return new PageResponseDto<>(dtoPage);
+    }
+
+    // 사용자가 좋아요를 누른 북마크 조회
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> getMyLikedBookmarks(Long userId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findLikedBookmarksByUser_Id(userId, pageable);
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.getBookmarkDtoById(bookmark.getId()));
+        return new PageResponseDto<>(dtoPage);
+    }
+
+    // 탈퇴 처리
+    public void deleteAccount(Long userId) {
+        // 사용자 정보 불러와서 탈퇴 처리
+        User user = userService.getUserById(userId);
+        user.withdraw();
+
+        // RefreshToken 삭제하여 세션 무효화
+        tokenService.deleteTokenByUserId(userId);
+
+        // 마지막 관리자인 그룹이 있는 경우 탈퇴가 불가능하도록 로직 추가 필요
+    }
+}

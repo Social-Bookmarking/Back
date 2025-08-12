@@ -59,4 +59,11 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Bookmark b SET b.category = null WHERE b.category.id = :categoryId")
     void bulkSetCategoryToNull(@Param("categoryId") Long categoryId);
+
+    // 작성자 기준으로 북마크 조회
+    Page<Bookmark> findAllByUser_Id(Long userId, Pageable pageable);
+
+    // 특정 사용자가 '좋아요'를 누른 북마크 정보 조회
+    @Query("SELECT b FROM Bookmark b JOIN b.bookmarkLikes bl WHERE bl.user.id = :userId")
+    Page<Bookmark> findLikedBookmarksByUser_Id(Long userId, Pageable pageable);
 }

@@ -70,6 +70,12 @@ public class Bookmark {
     @ToString.Exclude
     private List<BookmarkTag> bookmarkTags = new ArrayList<>();
 
+    // 북마크-좋아요 관계
+    @OneToMany(mappedBy = "bookmark", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @ToString.Exclude
+    private List<BookmarkLike> bookmarkLikes = new ArrayList<>();
+
     public void updateCategory(Category category) {
         this.category = category;
     }
