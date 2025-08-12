@@ -6,6 +6,7 @@ import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -45,13 +46,17 @@ public class TeamBookmarkController {
         return ResponseEntity.status(HttpStatus.CREATED).body("bookmarkId: " + bookmark.getId() + " created");
     }
 
-    @Operation(summary = "그룹 내 모든 북마크 조회 (페이징)", description = "특정 그룹에 속한 모든 북마크를 페이징하여 조회합니다.")
+    @Operation(summary = "그룹 내 모든 북마크 조회 (페이징)",
+            description = "특정 그룹에 속한 모든 북마크를 페이징하여 조회합니다.",
+            parameters = {
+                    @Parameter(name = "page", description = "표시할 페이지 (1부터 시작)")
+            })
     @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공")
     @GetMapping("/{groupId}/bookmarks")
     public ResponseEntity<?> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(required = false) Long tagId,
-                                                 @PageableDefault(sort = "createdAt") Pageable pageable) {
+                                                 @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
 
         PageResponseDto<BookmarkResponseDto> bookmarkList;
 
@@ -66,7 +71,11 @@ public class TeamBookmarkController {
         return ResponseEntity.ok(bookmarkList);
     }
 
-    @Operation(summary = "특정 카테고리 내 북마크 조회 (페이징)", description = "특정 그룹의 특정 카테고리에 속한 북마크를 페이징하여 조회합니다.")
+    @Operation(summary = "특정 카테고리 내 북마크 조회 (페이징)",
+            description = "특정 그룹의 특정 카테고리에 속한 북마크를 페이징하여 조회합니다.",
+            parameters = {
+                    @Parameter(name = "page", description = "표시할 페이지(1부터 시작)")
+            })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공"),
             @ApiResponse(responseCode = "404", description = "그룹 또는 카테고리를 찾을 수 없음")
@@ -76,7 +85,7 @@ public class TeamBookmarkController {
                                                     @PathVariable("categoryId") Long categoryId,
                                                     @RequestParam(required = false) String keyword,
                                                     @RequestParam(required = false) Long tagId,
-                                                    @PageableDefault(sort = "createdAt") Pageable pageable) {
+                                                    @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
         PageResponseDto<BookmarkResponseDto> bookmarkList;
 
         if (tagId != null) {
