@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.team.entity;
 
 import com.sonkim.bookmarking.domain.team.dto.TeamDto;
+import com.sonkim.bookmarking.domain.team.enums.TeamStatus;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,6 +40,12 @@ public class Team {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private TeamStatus status = TeamStatus.ACTIVE;
+
+    private LocalDateTime deletionScheduledAt;
+
     public void update(TeamDto.RequestDto requestDto) {
         if (requestDto.getName() != null) this.name = requestDto.getName();
         if (requestDto.getDescription() != null) this.description = requestDto.getDescription();
@@ -46,5 +53,17 @@ public class Team {
 
     public void updateCode(String inviteCode) {
         this.inviteCode = inviteCode;
+    }
+
+    // 삭제 대기 상태로 변경
+    public void scheduleDeletion() {
+        this.status = TeamStatus.PENDING_DELETION;
+        this.deletionScheduledAt = LocalDateTime.now().plusDays(7);
+    }
+
+    // 삭제 취소 후 다시 활성 상태로 변경
+    public void cancelDeletion() {
+        this.status = TeamStatus.ACTIVE;
+        this.deletionScheduledAt = null;
     }
 }

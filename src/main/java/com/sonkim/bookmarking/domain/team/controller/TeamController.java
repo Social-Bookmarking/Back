@@ -131,4 +131,34 @@ public class TeamController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @Operation(summary = "그룹 삭제 요청", description = "그룹의 상태를 '삭제 대기' 상태로 변경합니다. ADMIN 권한이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "그룹 삭제 요청 성공"),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (ADMIN이 아님)"),
+            @ApiResponse(responseCode = "404", description = "그룹을 찾지 못함")
+    })
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<?> scheduleTeamDeletion(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable Long groupId
+    ) {
+        teamService.scheduleTeamDeletion(userDetails.getId(), groupId);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "그룹 삭제 취소", description = "'삭제 대기' 상태인 그룹을 다시 '활성화' 상태로 변경합니다. ADMIN 권한이 필요합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "그룹 삭제 취소 성공"),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (ADMIN이 아님)"),
+            @ApiResponse(responseCode = "404", description = "그룹을 찾지 못함")
+    })
+    @PostMapping("/{groupId}/cancel-deletion")
+    public ResponseEntity<?> cancelTeamDeletion(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable Long groupId
+    ) {
+        teamService.cancelTeamDeletion(userDetails.getId(), groupId);
+        return ResponseEntity.ok().build();
+    }
 }

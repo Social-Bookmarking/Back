@@ -4,6 +4,7 @@ import com.sonkim.bookmarking.domain.team.dto.TeamDto;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.entity.TeamMember;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
+import com.sonkim.bookmarking.domain.team.enums.TeamStatus;
 import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
@@ -15,6 +16,7 @@ import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -185,5 +187,42 @@ public class TeamService {
                 .build();
 
         teamMemberService.save(teamMember);
+    }
+
+    // 그룹 삭제 요청
+    @Transactional
+    public void scheduleTeamDeletion(Long userId, Long teamId) {
+        log.info("userId: {}, teamId: {} 그룹 삭제 요청", userId, teamId);
+
+        // ADMIN 권한 확인
+        teamMemberService.validateAdmin(userId, teamId);
+
+        // 그룹 삭제 요청
+        Team team = getTeamById(teamId);
+        team.scheduleDeletion();
+    }
+
+    // 그룹 삭제 취소 요청
+    @Transactional
+    public void cancelTeamDeletion(Long userId, Long teamId) {
+        log.info("userId: {}, teamId: {} 그룹 삭제 취소 요청", userId, teamId);
+
+        // ADMIN 권한 확인
+        teamMemberService.validateAdmin(userId, teamId);
+
+        // 그룹 삭제 취소 요청
+        Team team = getTeamById(teamId);
+        team.cancelDeletion();
+    }
+
+    // 삭제가 예정된 그룹들 삭제
+    @Transactional
+    public void deletePendingTeams() {
+        // 삭제 예정이면서 삭제 예정일이 지난 그룹들 조회
+        List<Team> teamsToDelete = teamRepository.findAllByStatusAndDeletionScheduledAtBefore(
+                TeamStatus.PENDING_DELETION, LocalDateTime.now()
+        );
+
+        teamRepository.deleteAll(teamsToDelete);
     }
 }
