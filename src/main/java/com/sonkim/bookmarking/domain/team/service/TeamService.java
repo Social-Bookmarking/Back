@@ -120,6 +120,9 @@ public class TeamService {
     public void updateTeam(Long userId, Long teamId, TeamDto.RequestDto updateDto) {
         log.info("userId: {}, teamId: {} 정보 수정 요청", userId, teamId);
 
+        // 그룹 상태 검증
+        validateGroupIsActive(teamId);
+
         // 요청자가 해당 그룹의 관리자인지 검증
         teamMemberService.validateAdmin(userId, teamId);
 
@@ -224,5 +227,13 @@ public class TeamService {
         );
 
         teamRepository.deleteAll(teamsToDelete);
+    }
+
+    // 그룹 상태 확인(삭제 예정인 그룹인 읽기만 가능)
+    @Transactional(readOnly = true)
+    public void validateGroupIsActive(Long teamId) {
+        Team team = getTeamById(teamId);
+        if (team.getStatus() == TeamStatus.PENDING_DELETION)
+            throw new IllegalStateException("삭제가 예정된 그룹에서는 이 작업을 수행할 수 없습니다.");
     }
 }

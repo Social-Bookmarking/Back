@@ -46,6 +46,8 @@ public class BookmarkService {
     // 북마크 등록
     @Transactional
     public Bookmark createBookmark(Long userId, Long teamId, BookmarkRequestDto request) {
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(teamId);
 
         // 요청한 사용자의 그룹 내 역할 확인
         Permission userPermission = teamMemberService.getUserPermissionInTeam(userId, teamId);
@@ -109,6 +111,9 @@ public class BookmarkService {
     public void updateBookmark(Long userId, Long bookmarkId, BookmarkRequestDto dto) {
         Bookmark bookmark = getBookmarkById(bookmarkId);
 
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(bookmark.getTeam().getId());
+
         // 요청한 사용자가 북마크를 작성한 사용자인지 확인
         if (!bookmark.getUser().getId().equals(userId)) {
             throw new AuthorizationDeniedException("해당 북마크를 수정할 권한이 없습니다.");
@@ -126,6 +131,9 @@ public class BookmarkService {
     @Transactional
     public void deleteBookmark(Long userId, Long bookmarkId) {
         Bookmark bookmark = getBookmarkById(bookmarkId);
+
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(bookmark.getTeam().getId());
 
         // 요청한 사용자가 작성자인지 확인
         boolean isCreator = bookmark.getUser().getId().equals(userId);
