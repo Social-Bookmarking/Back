@@ -28,7 +28,7 @@ public class User {
     private String username;
 
     // 비밀번호
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String password;
 
     // 가입일
@@ -36,9 +36,10 @@ public class User {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // 계정 상태
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus userStatus;
+    private UserStatus userStatus = UserStatus.ACTIVE;
 
     private LocalDateTime deletedAt;
 
