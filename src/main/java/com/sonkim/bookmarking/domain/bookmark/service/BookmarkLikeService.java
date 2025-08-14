@@ -20,12 +20,6 @@ public class BookmarkLikeService {
     private final UserService userService;
     private final BookmarkLikeRepository bookmarkLikeRepository;
 
-    // 북마크-좋아요 수 조회
-    @Transactional(readOnly = true)
-    public Long countBookmarkLike(Long bookmarkId) {
-        return bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
-    }
-
     // 북마크-좋아요 추가
     @Transactional
     public void createBookmarkLike(Long userId, Long bookmarkId) {

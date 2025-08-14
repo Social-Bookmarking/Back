@@ -29,6 +29,9 @@ public class TagService {
     public void createTag(Long userId, Long teamId, TagDto.RequestDto request) {
         log.info("userId: {}, teamId: {}, tag: {} 생성 요청", userId, teamId, request.getName());
 
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(teamId);
+
         // EDITOR 권한 검사
         teamMemberService.validateEditor(userId, teamId);
 
@@ -61,6 +64,9 @@ public class TagService {
     @Transactional
     public void deleteTag(Long userId, Long teamId, Long tagId) {
         log.info("userId: {}, teamId: {}, tagId: {} 삭제 요청", userId, teamId, tagId);
+
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(teamId);
 
         // 태그 존재 여부 확인
         tagRepository.findById(tagId)

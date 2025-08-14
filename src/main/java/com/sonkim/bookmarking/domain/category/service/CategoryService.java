@@ -31,6 +31,9 @@ public class CategoryService {
     public void createCategory(Long userId, Long teamId, CategoryDto.RequestDto request) {
         log.info("userId: {}, teamId: {}, categoryName: {} 카테고리 생성 요청", userId, teamId, request.getName());
 
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(teamId);
+
         // 요청자가 권한이 있는지 검증
         teamMemberService.validateEditor(userId, teamId);
 
@@ -70,6 +73,9 @@ public class CategoryService {
         // 카테고리 정보 가져오기
         Category category = getCategoryById(categoryId);
 
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(category.getTeam().getId());
+
         // 요청자가 권한이 있는지 검사
         teamMemberService.validateEditor(userId, category.getTeam().getId());
 
@@ -84,6 +90,10 @@ public class CategoryService {
 
         // 카테고리 정보 가져오기
         Category category = getCategoryById(categoryId);
+
+        // 그룹 상태 검증
+        teamService.validateGroupIsActive(category.getTeam().getId());
+
         // 요청자가 권한이 있는지 검사
         teamMemberService.validateEditor(userId, category.getTeam().getId());
 
