@@ -48,6 +48,8 @@ public class MyPageService {
     // 닉네임 변경
     @Transactional
     public void updateNickname(Long userId, MyProfileDto.UpdateNicknameRequestDto requestDto) {
+        log.info("userId: {} 닉네임 변경 요청", userId);
+
         User user = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
 
@@ -57,6 +59,8 @@ public class MyPageService {
     // 비밀번호 변경
     @Transactional
     public void changePassword(Long userId, PasswordDto passwordDto) {
+        log.info("userId: {} 비밀번호 변경 요청", userId);
+
         User user = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
 
@@ -66,7 +70,7 @@ public class MyPageService {
         }
 
         // 새 비밀번호로 변경
-        user.updatePassword(passwordEncoder.encode(passwordDto.getCurrentPassword()));
+        user.updatePassword(passwordEncoder.encode(passwordDto.getNewPassword()));
 
         // refresh token 삭제
         tokenService.deleteTokenByUserId(userId);
@@ -90,6 +94,8 @@ public class MyPageService {
 
     // 탈퇴 처리
     public void deleteAccount(Long userId) {
+        log.info("userId: {} 탈퇴 요청", userId);
+
         // 사용자 정보 불러와서 탈퇴 처리
         User user = userService.getUserById(userId);
         user.withdraw();

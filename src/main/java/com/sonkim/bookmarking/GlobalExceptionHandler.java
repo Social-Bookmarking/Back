@@ -11,6 +11,7 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -55,6 +56,13 @@ public class GlobalExceptionHandler {
         log.warn("405(METHOD_NOT_ALLOWED) 에러 발생: {}", e.getMessage());
 
         return buildResponse(HttpStatus.METHOD_NOT_ALLOWED, "지원되지 않는 HTTP 메서드 요청입니다.");
+    }
+
+    // NoResourceFoundException 처리
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<?> handleNoResourceFoundException(NoResourceFoundException e) {
+        log.warn("404(NOT_FOUND) 에러 발생 : {}", e.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
     // '좋아요' 중복 에러 처리

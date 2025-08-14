@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "마이페이지(테스트 전)", description = "내 정보 조회, 수정 등 마이페이지 관련 API")
+@Tag(name = "마이페이지", description = "내 정보 조회, 수정 등 마이페이지 관련 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/me")
@@ -103,7 +103,8 @@ public class MyPageController {
         return ResponseEntity.noContent().build();
     }
 
-    // 사용자가 속한 그룹 목록 조회
+    @Operation(summary = "내가 가입한 그룹 조회", description = "현재 로그인한 사용자가 속해있는 모든 그룹을 조회합니다.")
+    @ApiResponse(responseCode = "200", description = "그룹 목록 조회 성공")
     @GetMapping("/groups")
     public ResponseEntity<?> getMyTeams(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         List<TeamDto.MyTeamDto> myTeams = teamService.getMyTeams(userDetails.getId());
