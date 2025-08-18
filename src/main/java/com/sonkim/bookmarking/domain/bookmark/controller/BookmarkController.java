@@ -32,8 +32,11 @@ public class BookmarkController {
             @ApiResponse(responseCode = "404", description = "북마크를 찾을 수 없음")
     })
     @GetMapping("/{bookmarkId}")
-    public ResponseEntity<?> getBookmark(@PathVariable("bookmarkId") Long bookmarkId) {
-        BookmarkResponseDto responseDto = bookmarkService.getBookmarkDtoById(bookmarkId);
+    public ResponseEntity<?> getBookmark(
+            @PathVariable("bookmarkId") Long bookmarkId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        BookmarkResponseDto responseDto = bookmarkService.convertToDto(userDetails.getId(), bookmarkId);
         return ResponseEntity.ok(responseDto);
     }
 

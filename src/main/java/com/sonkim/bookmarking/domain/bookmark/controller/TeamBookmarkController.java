@@ -56,16 +56,16 @@ public class TeamBookmarkController {
     public ResponseEntity<?> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(required = false) Long tagId,
+                                                 @AuthenticationPrincipal UserDetailsImpl userDetails,
                                                  @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
-
         PageResponseDto<BookmarkResponseDto> bookmarkList;
 
         if (tagId != null) {
-            bookmarkList = bookmarkService.getBookmarksByTagInGroup(groupId, tagId, pageable);
+            bookmarkList = bookmarkService.getBookmarksByTagInGroup(userDetails.getId(), groupId, tagId, pageable);
         } else if (keyword != null && !keyword.isBlank()) {
-            bookmarkList = bookmarkService.searchBookmarksByTeamId(groupId, keyword, pageable);
+            bookmarkList = bookmarkService.searchBookmarksByTeamId(userDetails.getId(), groupId, keyword, pageable);
         } else {
-            bookmarkList = bookmarkService.getBookmarksByTeamId(groupId, pageable);
+            bookmarkList = bookmarkService.getBookmarksByTeamId(userDetails.getId(), groupId, pageable);
         }
 
         return ResponseEntity.ok(bookmarkList);
@@ -85,15 +85,16 @@ public class TeamBookmarkController {
                                                     @PathVariable("categoryId") Long categoryId,
                                                     @RequestParam(required = false) String keyword,
                                                     @RequestParam(required = false) Long tagId,
+                                                    @AuthenticationPrincipal UserDetailsImpl userDetails,
                                                     @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
         PageResponseDto<BookmarkResponseDto> bookmarkList;
 
         if (tagId != null) {
-            bookmarkList = bookmarkService.getBookmarksByTagInCategory(groupId, categoryId, tagId, pageable);
+            bookmarkList = bookmarkService.getBookmarksByTagInCategory(userDetails.getId(), groupId, categoryId, tagId, pageable);
         }else if (keyword != null && !keyword.isBlank()) {
-            bookmarkList = bookmarkService.searchBookmarksByTeamIdAndCategoryId(groupId, categoryId, keyword, pageable);
+            bookmarkList = bookmarkService.searchBookmarksByTeamIdAndCategoryId(userDetails.getId(), groupId, categoryId, keyword, pageable);
         } else {
-            bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(groupId, categoryId, pageable);
+            bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(userDetails.getId(), groupId, categoryId, pageable);
         }
 
         return ResponseEntity.ok(bookmarkList);

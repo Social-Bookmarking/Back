@@ -80,7 +80,7 @@ public class MyPageService {
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getMyBookmarks(Long userId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByUser_Id(userId, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.getBookmarkDtoById(bookmark.getId()));
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.convertToDto(userId, bookmark.getId()));
         return new PageResponseDto<>(dtoPage);
     }
 
@@ -88,7 +88,7 @@ public class MyPageService {
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getMyLikedBookmarks(Long userId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findLikedBookmarksByUser_Id(userId, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.getBookmarkDtoById(bookmark.getId()));
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.convertToDto(userId, bookmark.getId()));
         return new PageResponseDto<>(dtoPage);
     }
 
