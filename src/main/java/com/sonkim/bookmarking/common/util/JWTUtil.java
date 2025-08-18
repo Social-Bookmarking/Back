@@ -20,6 +20,7 @@ public class JWTUtil {
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
+    private final long testTokenExpiration = 86400000;
 
     // application.properties에 저장된 Secret Key를 가져와 설정
     public JWTUtil(@Value("${spring.jwt.secret}") String secret,
@@ -61,6 +62,11 @@ public class JWTUtil {
                 .token(token)
                 .expiresAt(expiryLocalDateTime)
                 .build();
+    }
+
+    // 테스트용 Access Tocket 메서드 생성
+    public TokenDto createTestToken(Long userId, String username) {
+        return createToken("access", userId, username, testTokenExpiration);
     }
 
     // JWT 만료 여부 확인

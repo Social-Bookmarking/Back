@@ -64,4 +64,9 @@ public class AuthController {
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         return authService.logout(request, response);
     }
+
+    @PostMapping("/test")
+    public ResponseEntity<?> testLogin(HttpServletRequest request, HttpServletResponse response) {
+        return authService.testLogin();
+    }
 }
