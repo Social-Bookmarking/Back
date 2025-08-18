@@ -22,6 +22,7 @@ public class BookmarkResponseDto {
     private Double latitude;
     private Double longitude;
     private LocalDateTime createdAt;
+    private boolean isLiked;
     private Long likesCount;
     private List<TagInfo> tags;
 
@@ -45,8 +46,9 @@ public class BookmarkResponseDto {
                 .build();
     }
 
-    public static BookmarkResponseDto fromEntityWithLikes(Bookmark bookmark, Long likesCount) {
+    public static BookmarkResponseDto fromEntityWithLikes(Bookmark bookmark, boolean isLiked, Long likesCount) {
         BookmarkResponseDto dto = fromEntity(bookmark);
+        dto.isLiked = isLiked;
         dto.likesCount = likesCount;
 
         if (bookmark.getBookmarkTags() != null) {
