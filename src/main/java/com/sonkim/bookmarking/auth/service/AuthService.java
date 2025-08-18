@@ -131,6 +131,7 @@ public class AuthService {
     }
 
     // 로그아웃 처리
+    @Transactional
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
 
         // Refresh Token 조회
@@ -154,6 +155,18 @@ public class AuthService {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body("로그아웃 처리 성공");
+    }
+
+    @Transactional
+    public ResponseEntity<?> testLogin() {
+        User testUser = userRepository.findByUsername("test")
+                .orElseGet(() -> createAccount(
+                        new RegisterRequestDto("test", "password", "테스트유저"))
+                );
+
+        TokenDto accessToken = jwtUtil.createTestToken(testUser.getId(), testUser.getUsername());
+
+        return new ResponseEntity<>(Map.of("accessToken", accessToken.getToken()), HttpStatus.OK);
     }
 
     private String extractRefreshToken(HttpServletRequest request) {
