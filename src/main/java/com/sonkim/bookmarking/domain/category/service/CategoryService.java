@@ -28,7 +28,7 @@ public class CategoryService {
 
     // 카테고리 생성
     @Transactional
-    public void createCategory(Long userId, Long teamId, CategoryDto.CategoryRequestDto request) {
+    public List<CategoryDto.CategoryResponseDto> createCategory(Long userId, Long teamId, CategoryDto.CategoryRequestDto request) {
         log.info("userId: {}, teamId: {}, categoryName: {} 카테고리 생성 요청", userId, teamId, request.getName());
 
         // 그룹 상태 검증
@@ -49,6 +49,8 @@ public class CategoryService {
                 .team(team)
                 .build();
         categoryRepository.save(newCategory);
+
+        return getCategoriesByTeam(teamId);
     }
 
     // 카테고리 목록 조회
@@ -75,7 +77,7 @@ public class CategoryService {
 
     // 카테고리 정보 수정
     @Transactional
-    public void updateCategory(Long userId, Long categoryId, CategoryDto.CategoryRequestDto request) {
+    public List<CategoryDto.CategoryResponseDto> updateCategory(Long userId, Long categoryId, CategoryDto.CategoryRequestDto request) {
         log.info("userId: {}, categoryId: {} 카테고리 정보 수정 요청", userId, categoryId);
 
         // 카테고리 정보 가져오기
@@ -89,15 +91,18 @@ public class CategoryService {
 
         // 카테고리 업데이트
         category.update(request);
+
+        return getCategoriesByTeam(category.getTeam().getId());
     }
 
     // 카테고리 삭제
     @Transactional
-    public void deleteCategory(Long userId, Long categoryId) {
+    public List<CategoryDto.CategoryResponseDto> deleteCategory(Long userId, Long categoryId) {
         log.info("userId: {}, categoryId: {} 카테고리 삭제 요청", userId, categoryId);
 
         // 카테고리 정보 가져오기
         Category category = getCategoryById(categoryId);
+        Long teamId = category.getTeam().getId();
 
         // 그룹 상태 검증
         teamService.validateGroupIsActive(category.getTeam().getId());
@@ -109,6 +114,8 @@ public class CategoryService {
         bookmarkRepository.bulkSetCategoryToNull(categoryId);
 
         categoryRepository.delete(category);
+
+        return getCategoriesByTeam(teamId);
     }
 
     public Category getCategoryById(Long categoryId) {

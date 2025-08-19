@@ -41,11 +41,11 @@ public class CategoryController {
             @ApiResponse(responseCode = "409", description = "이미 존재하는 카테고리 이름")
     })
     @PostMapping("/groups/{groupId}/categories")
-    public ResponseEntity<Void> createCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<List<CategoryDto.CategoryResponseDto>> createCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("groupId") Long groupId,
                                             @RequestBody CategoryDto.CategoryRequestDto request) {
-        categoryService.createCategory(userDetails.getId(), groupId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        List<CategoryDto.CategoryResponseDto> updatedCategories = categoryService.createCategory(userDetails.getId(), groupId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(updatedCategories);
     }
 
     @Operation(summary = "카테고리 정보 수정", description = "특정 카테고리의 이름을 수정합니다. EDITOR 이상의 권한이 필요합니다.")
@@ -55,11 +55,11 @@ public class CategoryController {
             @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없음")
     })
     @PatchMapping("/categories/{categoryId}")
-    public ResponseEntity<Void> updateCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<List<CategoryDto.CategoryResponseDto>> updateCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("categoryId") Long categoryId,
                                             @RequestBody CategoryDto.CategoryRequestDto request) {
-        categoryService.updateCategory(userDetails.getId(), categoryId, request);
-        return ResponseEntity.ok().build();
+        List<CategoryDto.CategoryResponseDto> updatedCategories = categoryService.updateCategory(userDetails.getId(), categoryId, request);
+        return ResponseEntity.ok(updatedCategories);
     }
 
     @Operation(summary = "카테고리 삭제", description = "특정 카테고리를 삭제합니다. EDITOR 이상의 권한이 필요합니다. 삭제 시 해당 카테고리에 속한 북마크들은 '미분류' 상태가 됩니다.")
@@ -69,9 +69,9 @@ public class CategoryController {
             @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없음")
     })
     @DeleteMapping("/categories/{categoryId}")
-    public ResponseEntity<Void> deleteCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<List<CategoryDto.CategoryResponseDto>> deleteCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("categoryId") Long categoryId) {
-        categoryService.deleteCategory(userDetails.getId(), categoryId);
-        return ResponseEntity.ok().build();
+        List<CategoryDto.CategoryResponseDto> updatedCategories = categoryService.deleteCategory(userDetails.getId(), categoryId);
+        return ResponseEntity.ok(updatedCategories);
     }
 }
