@@ -28,8 +28,8 @@ public class TagController {
     @Operation(summary = "그룹 내 모든 태그 목록 조회", description = "특정 그룹에 속한 모든 태그의 목록을 조회합니다.")
     @ApiResponse(responseCode = "200", description = "태그 목록 조회 성공")
     @GetMapping("/groups/{groupId}/tags")
-    public ResponseEntity<?> getTagsByGroupId(@PathVariable("groupId") Long groupId) {
-        List<TagDto.ResponseDto> tags = tagService.getTagsByTeamId(groupId);
+    public ResponseEntity<List<TagDto.TagResponseDto>> getTagsByGroupId(@PathVariable("groupId") Long groupId) {
+        List<TagDto.TagResponseDto> tags = tagService.getTagsByTeamId(groupId);
         return ResponseEntity.ok(tags);
     }
 
@@ -40,9 +40,9 @@ public class TagController {
             @ApiResponse(responseCode = "409", description = "이미 존재하는 태그 이름")
     })
     @PostMapping("/groups/{groupId}/tags")
-    public ResponseEntity<?> createTag(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> createTag(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                        @PathVariable("groupId") Long groupId,
-                                       @RequestBody TagDto.RequestDto request) {
+                                       @RequestBody TagDto.TagRequestDto request) {
         tagService.createTag(userDetails.getId(), groupId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -54,7 +54,7 @@ public class TagController {
             @ApiResponse(responseCode = "404", description = "존재하지 않는 태그")
     })
     @DeleteMapping("/groups/{groupId}/tags/{tagId}")
-    public ResponseEntity<?> deleteTag(
+    public ResponseEntity<Void> deleteTag(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long groupId,
             @PathVariable Long tagId) {

@@ -1,9 +1,11 @@
 package com.sonkim.bookmarking.auth.controller;
 
+import com.sonkim.bookmarking.auth.dto.AuthDto;
 import com.sonkim.bookmarking.auth.service.AuthService;
 import com.sonkim.bookmarking.auth.dto.RegisterRequestDto;
-import com.sonkim.bookmarking.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,8 +20,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.Map;
 
 @Tag(name = "인증 관리", description = "회원가입, 로그인, 토큰 재발급, 로그아웃 관련 API")
 @Slf4j
@@ -37,21 +37,24 @@ public class AuthController {
             @ApiResponse(responseCode = "409", description = "이미 존재하는 이메일")
     })
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequestDto dto) {
+    public ResponseEntity<Void> register(@RequestBody RegisterRequestDto dto) {
 
         log.info("{} 회원가입 요청", dto.toString());
-        User newUser = authService.createAccount(dto);
+        authService.createAccount(dto);
 
-        Map<String, Object> response = Map.of(
-                "message", "새로운 계정이 생성되었습니다.",
-                "userId", newUser.getId()
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(summary = "토큰 재발급", description = "만료된 Access Token을 Refresh Token을 이용해 재발급받습니다.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "토큰 재발급 성공 (Authorization 헤더에 새로운 Access Token 포함)"),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "토큰 재발급 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = AuthDto.TokenResponseDto.class)
+                    )
+            ),
             @ApiResponse(responseCode = "401", description = "유효하지 않은 Refresh Token")
     })
     @PostMapping("/reissue")

@@ -32,7 +32,7 @@ public class BookmarkController {
             @ApiResponse(responseCode = "404", description = "북마크를 찾을 수 없음")
     })
     @GetMapping("/{bookmarkId}")
-    public ResponseEntity<?> getBookmark(
+    public ResponseEntity<BookmarkResponseDto> getBookmark(
             @PathVariable("bookmarkId") Long bookmarkId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
@@ -47,7 +47,7 @@ public class BookmarkController {
             @ApiResponse(responseCode = "404", description = "북마크를 찾을 수 없음")
     })
     @PatchMapping("/{bookmarkId}")
-    public ResponseEntity<?> updateBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<String> updateBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("bookmarkId") Long bookmarkId,
                                             @RequestBody BookmarkRequestDto bookmarkRequestDto) {
         log.info("userId: {}, bookmarkId: {} 북마크 수정 요청", userDetails.getId(), bookmarkId);
@@ -62,7 +62,7 @@ public class BookmarkController {
             @ApiResponse(responseCode = "404", description = "북마크를 찾을 수 없음")
     })
     @DeleteMapping("/{bookmarkId}")
-    public ResponseEntity<?> deleteBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> deleteBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("bookmarkId") Long bookmarkId) {
         log.info("userId: {}, bookmarkId: {} 북마크 삭제 요청", userDetails.getId(), bookmarkId);
         bookmarkService.deleteBookmark(userDetails.getId(), bookmarkId);
@@ -75,7 +75,7 @@ public class BookmarkController {
             @ApiResponse(responseCode = "404", description = "정보를 추출할 수 없거나 유효하지 않은 URL")
     })
     @GetMapping("/og-info")
-    public ResponseEntity<?> getBookmarkInformation(@RequestParam String url) {
+    public ResponseEntity<BookmarkOGDto> getBookmarkInformation(@RequestParam String url) {
         try {
             BookmarkOGDto info = OGUtil.getOpenGraphData(url);
             return ResponseEntity.ok(info);

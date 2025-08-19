@@ -25,12 +25,6 @@ public class Category {
     @Column(nullable = false, length = 20)
     private String name;
 
-    // 카테고리 설명
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    public void update(CategoryDto.RequestDto request) {
-        if (request.getName() != null) this.name = request.getName();
-        if (request.getDescription() != null) this.description = request.getDescription();
-    }
+    public void update(CategoryDto.CategoryRequestDto request) {
+        if (request.getName() != null) this.name = request.getName();}
 }

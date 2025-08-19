@@ -37,7 +37,7 @@ public class TeamBookmarkController {
             @ApiResponse(responseCode = "404", description = "그룹 또는 카테고리를 찾을 수 없음")
     })
     @PostMapping("/{groupId}/bookmarks")
-    public ResponseEntity<?> createBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<String> createBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable Long groupId,
                                             @RequestBody BookmarkRequestDto bookmarkRequestDto) {
         log.info("userId: {}, url: {} 북마크 생성 요청", userDetails.getId(), bookmarkRequestDto.getUrl());
@@ -53,7 +53,7 @@ public class TeamBookmarkController {
             })
     @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공")
     @GetMapping("/{groupId}/bookmarks")
-    public ResponseEntity<?> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
+    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(required = false) Long tagId,
                                                  @AuthenticationPrincipal UserDetailsImpl userDetails,
@@ -81,7 +81,7 @@ public class TeamBookmarkController {
             @ApiResponse(responseCode = "404", description = "그룹 또는 카테고리를 찾을 수 없음")
     })
     @GetMapping("/{groupId}/categories/{categoryId}/bookmarks")
-    public ResponseEntity<?> getBookmarksOfCategory(@PathVariable("groupId") Long groupId,
+    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksOfCategory(@PathVariable("groupId") Long groupId,
                                                     @PathVariable("categoryId") Long categoryId,
                                                     @RequestParam(required = false) String keyword,
                                                     @RequestParam(required = false) Long tagId,

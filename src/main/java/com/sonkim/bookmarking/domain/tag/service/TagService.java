@@ -26,7 +26,7 @@ public class TagService {
 
     // 새로운 태그 생성
     @Transactional
-    public void createTag(Long userId, Long teamId, TagDto.RequestDto request) {
+    public void createTag(Long userId, Long teamId, TagDto.TagRequestDto request) {
         log.info("userId: {}, teamId: {}, tag: {} 생성 요청", userId, teamId, request.getName());
 
         // 그룹 상태 검증
@@ -50,10 +50,10 @@ public class TagService {
 
     // 특정 그룹의 모든 태그 목록 조회
     @Transactional(readOnly = true)
-    public List<TagDto.ResponseDto> getTagsByTeamId(Long teamId) {
+    public List<TagDto.TagResponseDto> getTagsByTeamId(Long teamId) {
         List<Tag> tags = tagRepository.findAllByTeam_Id(teamId);
         return tags.stream()
-                .map(tag -> TagDto.ResponseDto.builder()
+                .map(tag -> TagDto.TagResponseDto.builder()
                             .id(tag.getId())
                             .name(tag.getName())
                             .build())

@@ -7,14 +7,14 @@ public class TagDto {
 
     // 태그 생성/수정 요청 DTO
     @Data
-    public static class RequestDto {
+    public static class TagRequestDto {
         private String name;
     }
 
     // 그룹 내 모든 태그 응답 DTO
     @Data
     @Builder
-    public static class ResponseDto {
+    public static class TagResponseDto {
         private Long id;
         private String name;
     }

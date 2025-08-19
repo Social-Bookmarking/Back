@@ -66,4 +66,7 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     // 특정 사용자가 '좋아요'를 누른 북마크 정보 조회
     @Query("SELECT b FROM Bookmark b JOIN b.bookmarkLikes bl WHERE bl.user.id = :userId")
     Page<Bookmark> findLikedBookmarksByUser_Id(Long userId, Pageable pageable);
+
+    // 그룹 내 모든 북마크 개수 카운트
+    long countByTeam_Id(Long teamId);
 }

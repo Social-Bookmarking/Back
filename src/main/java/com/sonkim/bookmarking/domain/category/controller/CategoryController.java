@@ -29,8 +29,8 @@ public class CategoryController {
     @Operation(summary = "그룹의 모든 카테고리 목록 조회", description = "특정 그룹에 속한 모든 카테고리의 목록을 조회합니다.")
     @ApiResponse(responseCode = "200", description = "카테고리 목록 조회 성공")
     @GetMapping("/groups/{groupId}/categories")
-    public ResponseEntity<?> getCategories(@PathVariable("groupId") Long groupId) {
-        List<CategoryDto.ResponseDto> categories = categoryService.getCategoriesByTeam(groupId);
+    public ResponseEntity<List<CategoryDto.CategoryResponseDto>> getCategories(@PathVariable("groupId") Long groupId) {
+        List<CategoryDto.CategoryResponseDto> categories = categoryService.getCategoriesByTeam(groupId);
         return ResponseEntity.ok(categories);
     }
 
@@ -41,9 +41,9 @@ public class CategoryController {
             @ApiResponse(responseCode = "409", description = "이미 존재하는 카테고리 이름")
     })
     @PostMapping("/groups/{groupId}/categories")
-    public ResponseEntity<?> createCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> createCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("groupId") Long groupId,
-                                            @RequestBody CategoryDto.RequestDto request) {
+                                            @RequestBody CategoryDto.CategoryRequestDto request) {
         categoryService.createCategory(userDetails.getId(), groupId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -55,9 +55,9 @@ public class CategoryController {
             @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없음")
     })
     @PatchMapping("/categories/{categoryId}")
-    public ResponseEntity<?> updateCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> updateCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("categoryId") Long categoryId,
-                                            @RequestBody CategoryDto.RequestDto request) {
+                                            @RequestBody CategoryDto.CategoryRequestDto request) {
         categoryService.updateCategory(userDetails.getId(), categoryId, request);
         return ResponseEntity.ok().build();
     }
@@ -69,7 +69,7 @@ public class CategoryController {
             @ApiResponse(responseCode = "404", description = "카테고리를 찾을 수 없음")
     })
     @DeleteMapping("/categories/{categoryId}")
-    public ResponseEntity<?> deleteCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> deleteCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("categoryId") Long categoryId) {
         categoryService.deleteCategory(userDetails.getId(), categoryId);
         return ResponseEntity.ok().build();

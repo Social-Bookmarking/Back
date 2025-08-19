@@ -13,8 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,7 +28,7 @@ public class CategoryService {
 
     // 카테고리 생성
     @Transactional
-    public void createCategory(Long userId, Long teamId, CategoryDto.RequestDto request) {
+    public void createCategory(Long userId, Long teamId, CategoryDto.CategoryRequestDto request) {
         log.info("userId: {}, teamId: {}, categoryName: {} 카테고리 생성 요청", userId, teamId, request.getName());
 
         // 그룹 상태 검증
@@ -46,7 +46,6 @@ public class CategoryService {
         Team team = teamService.getTeamById(teamId);
         Category newCategory = Category.builder()
                 .name(request.getName())
-                .description(request.getDescription())
                 .team(team)
                 .build();
         categoryRepository.save(newCategory);
@@ -54,20 +53,29 @@ public class CategoryService {
 
     // 카테고리 목록 조회
     @Transactional(readOnly = true)
-    public List<CategoryDto.ResponseDto> getCategoriesByTeam(Long teamId) {
-        List<Category> categories = categoryRepository.findAllByTeam_Id(teamId);
-        return categories.stream()
-                .map(category -> CategoryDto.ResponseDto.builder()
-                        .id(category.getId())
-                        .name(category.getName())
-                        .description(category.getDescription())
-                        .build())
-                .collect(Collectors.toList());
+    public List<CategoryDto.CategoryResponseDto> getCategoriesByTeam(Long teamId) {
+        // 각 카테고리 정보와 북마크 개수 조회
+        List<CategoryDto.CategoryResponseDto> categoriesWithCount = categoryRepository.findAllWithBookmarkCountByTeam_Id(teamId);
+
+        // 그룹 전체 북마크 개수 조회
+        long totalBookmarkCount = bookmarkRepository.countByTeam_Id(teamId);
+
+        // '전체' 카테고리 생성하여 추가
+        CategoryDto.CategoryResponseDto allCategories = CategoryDto.CategoryResponseDto.builder()
+                .name("전체")
+                .bookmarkCount(totalBookmarkCount)
+                .build();
+
+        List<CategoryDto.CategoryResponseDto> result = new ArrayList<>();
+        result.add(allCategories);
+        result.addAll(categoriesWithCount);
+
+        return result;
     }
 
     // 카테고리 정보 수정
     @Transactional
-    public void updateCategory(Long userId, Long categoryId, CategoryDto.RequestDto request) {
+    public void updateCategory(Long userId, Long categoryId, CategoryDto.CategoryRequestDto request) {
         log.info("userId: {}, categoryId: {} 카테고리 정보 수정 요청", userId, categoryId);
 
         // 카테고리 정보 가져오기

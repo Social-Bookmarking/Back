@@ -46,9 +46,9 @@ public class Team {
 
     private LocalDateTime deletionScheduledAt;
 
-    public void update(TeamDto.RequestDto requestDto) {
-        if (requestDto.getName() != null) this.name = requestDto.getName();
-        if (requestDto.getDescription() != null) this.description = requestDto.getDescription();
+    public void update(TeamDto.TeamRequestDto teamRequestDto) {
+        if (teamRequestDto.getName() != null) this.name = teamRequestDto.getName();
+        if (teamRequestDto.getDescription() != null) this.description = teamRequestDto.getDescription();
     }
 
     public void updateCode(String inviteCode) {
