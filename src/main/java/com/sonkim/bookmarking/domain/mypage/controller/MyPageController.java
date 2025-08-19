@@ -37,8 +37,8 @@ public class MyPageController {
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @GetMapping("/profile")
-    public ResponseEntity<MyProfileDto.RequestDto> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        MyProfileDto.RequestDto myProfile = myPageService.getMyProfile(userDetails.getId());
+    public ResponseEntity<MyProfileDto.MyProfileRequestDto> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        MyProfileDto.MyProfileRequestDto myProfile = myPageService.getMyProfile(userDetails.getId());
         return ResponseEntity.ok(myProfile);
     }
 
@@ -106,7 +106,7 @@ public class MyPageController {
     @Operation(summary = "내가 가입한 그룹 조회", description = "현재 로그인한 사용자가 속해있는 모든 그룹을 조회합니다.")
     @ApiResponse(responseCode = "200", description = "그룹 목록 조회 성공")
     @GetMapping("/groups")
-    public ResponseEntity<?> getMyTeams(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    public ResponseEntity<List<TeamDto.MyTeamDto>> getMyTeams(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         List<TeamDto.MyTeamDto> myTeams = teamService.getMyTeams(userDetails.getId());
         return ResponseEntity.ok(myTeams);
     }

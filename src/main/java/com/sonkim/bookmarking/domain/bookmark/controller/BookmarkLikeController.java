@@ -33,7 +33,7 @@ public class BookmarkLikeController {
             @ApiResponse(responseCode = "409", description = "이미 '좋아요'를 누른 북마크")
     })
     @PostMapping
-    public ResponseEntity<?> addLike(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> addLike(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                      @PathVariable("bookmarkId") Long bookmarkId) {
         log.info("userId: {}, bookmarkId: {} 좋아요 추가", userDetails.getId(), bookmarkId);
         bookmarkLikeService.createBookmarkLike(userDetails.getId(), bookmarkId);
@@ -47,7 +47,7 @@ public class BookmarkLikeController {
             @ApiResponse(responseCode = "404", description = "북마크를 찾을 수 없음")
     })
     @DeleteMapping
-    public ResponseEntity<?> removeLike(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> removeLike(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                         @PathVariable("bookmarkId") Long bookmarkId) {
         log.info("userId: {}, bookmarkId: {} 좋아요 삭제", userDetails.getId(), bookmarkId);
         bookmarkLikeService.deleteBookmarkLike(userDetails.getId(), bookmarkId);

@@ -7,7 +7,7 @@ public class TeamDto {
 
     // 그룹 생성 및 정보 수정
     @Data
-    public static class RequestDto {
+    public static class TeamRequestDto {
         private String name;
         private String description;
     }
@@ -15,7 +15,7 @@ public class TeamDto {
     // 그룹 정보 조회
     @Data
     @Builder
-    public static class ResponseDto {
+    public static class TeamResponseDto {
         private String name;
         private String description;
         private Long ownerId;
@@ -35,5 +35,19 @@ public class TeamDto {
     @Data
     public static class JoinRequestDto {
         private String inviteCode;
+    }
+
+    // 그룹 생성 답변
+    @Data
+    @Builder
+    public static class CreateResponseDto {
+        private Long teamId;
+    }
+
+    // 초대 코드 재생성 답변
+    @Data
+    @Builder
+    public static class CodeResponseDto {
+        private String code;
     }
 }

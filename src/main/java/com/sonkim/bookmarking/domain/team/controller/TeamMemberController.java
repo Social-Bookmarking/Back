@@ -27,7 +27,7 @@ public class TeamMemberController {
     @Operation(summary = "그룹 멤버 목록 조회", description = "특정 그룹에 속한 모든 멤버의 목록과 역할을 조회합니다.")
     @ApiResponse(responseCode = "200", description = "멤버 목록 조회 성공")
     @GetMapping("/{groupId}/members")
-    public ResponseEntity<?> getMembers(@PathVariable("groupId") Long groupId) {
+    public ResponseEntity<List<TeamMemberDto.MemberResponseDto>> getMembers(@PathVariable("groupId") Long groupId) {
         List<TeamMemberDto.MemberResponseDto> members = teamMemberService.getTeamMembers(groupId);
 
         return ResponseEntity.ok(members);
@@ -40,7 +40,7 @@ public class TeamMemberController {
             @ApiResponse(responseCode = "404", description = "그룹 또는 멤버를 찾을 수 없음")
     })
     @PatchMapping("/{groupId}/members/{memberId}")
-    public ResponseEntity<?> updateMemberPermission(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> updateMemberPermission(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                     @PathVariable("groupId") Long groupId,
                                                     @PathVariable("memberId") Long memberId,
                                                     @RequestBody TeamMemberDto.UpdatePermissionRequestDto dto) {
@@ -56,7 +56,7 @@ public class TeamMemberController {
             @ApiResponse(responseCode = "404", description = "그룹 또는 멤버를 찾을 수 없음")
     })
     @DeleteMapping("/{groupId}/members/{memberId}")
-    public ResponseEntity<?> kickMember(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> kickMember(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                         @PathVariable("groupId") Long groupId,
                                         @PathVariable("memberId") Long memberId) {
         teamMemberService.kickMember(userDetails.getId(), groupId, memberId);
@@ -70,7 +70,7 @@ public class TeamMemberController {
             @ApiResponse(responseCode = "404", description = "그룹 또는 멤버를 찾을 수 없음")
     })
     @DeleteMapping("/{groupId}/leave")
-    public ResponseEntity<?> leaveTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> leaveTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                        @PathVariable("groupId") Long groupId) {
         teamMemberService.leaveTeam(userDetails.getId(), groupId);
         return ResponseEntity.noContent().build();

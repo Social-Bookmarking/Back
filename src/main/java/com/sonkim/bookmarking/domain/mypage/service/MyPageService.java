@@ -33,13 +33,13 @@ public class MyPageService {
     private final UserService userService;
 
     @Transactional(readOnly = true)
-    public MyProfileDto.RequestDto getMyProfile(Long userId) {
+    public MyProfileDto.MyProfileRequestDto getMyProfile(Long userId) {
         // 프로필 정보 조회
         User user = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
 
         // DTO로 변환하여 반환
-        return MyProfileDto.RequestDto.builder()
+        return MyProfileDto.MyProfileRequestDto.builder()
                 .nickname(user.getProfile().getNickname())
                 .imageUrl(user.getProfile().getImageUrl())
                 .build();

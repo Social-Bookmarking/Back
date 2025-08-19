@@ -7,7 +7,7 @@ public class MyProfileDto {
 
     @Data
     @Builder
-    public static class RequestDto {
+    public static class MyProfileRequestDto {
         private String nickname;
         private String imageUrl;
     }

@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.domain.config;
+package com.sonkim.bookmarking.common.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;

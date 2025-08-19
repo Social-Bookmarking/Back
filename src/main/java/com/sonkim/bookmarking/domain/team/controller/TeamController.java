@@ -18,9 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Tag(name = "그룹 관리", description = "그룹 생성, 가입, 관리 관련 API")
 @Slf4j
 @RequiredArgsConstructor
@@ -34,12 +31,12 @@ public class TeamController {
     @Operation(summary = "새로운 그룹 생성", description = "사용자가 새로운 그룹을 생성합니다. 생성자는 자동으로 그룹의 ADMIN이 됩니다.")
     @ApiResponse(responseCode = "201", description = "그룹 생성 성공")
     @PostMapping
-    public ResponseEntity<?> createTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                        @RequestBody TeamDto.RequestDto createDto) {
+    public ResponseEntity<TeamDto.CreateResponseDto> createTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                        @RequestBody TeamDto.TeamRequestDto createDto) {
         Team newTeam = teamService.createTeam(userDetails.getId(), createDto);
 
-        Map<String, Long> response = new HashMap<>();
-        response.put("groupId", newTeam.getId());
+        TeamDto.CreateResponseDto response = TeamDto.CreateResponseDto.builder()
+                .teamId(newTeam.getId()).build();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -50,9 +47,9 @@ public class TeamController {
             @ApiResponse(responseCode = "404", description = "그룹을 찾을 수 없음")
     })
     @GetMapping("/{groupId}")
-    public ResponseEntity<?> getTeamDetails(@PathVariable Long groupId) {
-        TeamDto.ResponseDto responseDto = teamService.getTeamDetails(groupId);
-        return ResponseEntity.ok(responseDto);
+    public ResponseEntity<TeamDto.TeamResponseDto> getTeamDetails(@PathVariable Long groupId) {
+        TeamDto.TeamResponseDto teamResponseDto = teamService.getTeamDetails(groupId);
+        return ResponseEntity.ok(teamResponseDto);
     }
 
     @Operation(summary = "그룹 상세 정보 수정", description = "그룹의 이름이나 설명을 수정합니다. ADMIN 권한이 필요합니다.")
@@ -62,8 +59,8 @@ public class TeamController {
             @ApiResponse(responseCode = "404", description = "그룹을 찾을 수 없음")
     })
     @PatchMapping("/{groupId}")
-    public ResponseEntity<?> updateTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                        @RequestBody TeamDto.RequestDto updateDto,
+    public ResponseEntity<Void> updateTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                        @RequestBody TeamDto.TeamRequestDto updateDto,
                                         @PathVariable("groupId") Long groupId) {
         teamService.updateTeam(userDetails.getId(), groupId, updateDto);
         return ResponseEntity.ok().build();
@@ -75,12 +72,12 @@ public class TeamController {
             @ApiResponse(responseCode = "403", description = "권한 없음")
     })
     @PostMapping("/{groupId}/invite-code")
-    public ResponseEntity<?> updateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<TeamDto.CodeResponseDto> updateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                               @PathVariable("groupId") Long groupId) {
         String newInviteCode = teamService.generateInviteCode(userDetails.getId(), groupId);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("inviteCode", newInviteCode);
+        TeamDto.CodeResponseDto response = TeamDto.CodeResponseDto.builder()
+                .code(newInviteCode).build();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -91,10 +88,10 @@ public class TeamController {
             @ApiResponse(responseCode = "404", description = "유효하지 않은 초대 코드")
     })
     @GetMapping("/join")
-    public ResponseEntity<?> getTeamDetailsByCode(@RequestParam String code) {
-        TeamDto.ResponseDto responseDto = teamService.getTeamPreviewByCode(code);
+    public ResponseEntity<TeamDto.TeamResponseDto> getTeamDetailsByCode(@RequestParam String code) {
+        TeamDto.TeamResponseDto teamResponseDto = teamService.getTeamPreviewByCode(code);
 
-        return ResponseEntity.ok(responseDto);
+        return ResponseEntity.ok(teamResponseDto);
     }
 
     @Operation(summary = "초대 코드로 그룹 가입", description = "초대 코드를 사용하여 그룹에 멤버로 가입합니다. 가입 시 기본 권한은 VIEWER입니다.")
@@ -103,7 +100,7 @@ public class TeamController {
             @ApiResponse(responseCode = "409", description = "이미 가입된 그룹")
     })
     @PostMapping("/join")
-    public ResponseEntity<?> joinTeamMember(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<Void> joinTeamMember(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @RequestBody TeamDto.JoinRequestDto joinRequestDto) {
         teamService.joinTeam(userDetails.getId(), joinRequestDto.getInviteCode());
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -112,7 +109,7 @@ public class TeamController {
     @Operation(summary = "그룹 초대 QR 코드 이미지 생성", description = "그룹 초대를 위한 QR 코드를 이미지(PNG) 형식으로 생성하여 반환합니다.")
     @ApiResponse(responseCode = "200", description = "QR 코드 생성 성공", content = @Content(mediaType = "image/png"))
     @GetMapping("/{groupId}/invite-qr")
-    public ResponseEntity<?> generateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<byte[]> generateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                 @PathVariable("groupId") Long groupId) {
         try {
             // 그룹의 초대 코드 가져오기
@@ -139,7 +136,7 @@ public class TeamController {
             @ApiResponse(responseCode = "404", description = "그룹을 찾지 못함")
     })
     @DeleteMapping("/{groupId}")
-    public ResponseEntity<?> scheduleTeamDeletion(
+    public ResponseEntity<Void> scheduleTeamDeletion(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long groupId
     ) {
@@ -154,7 +151,7 @@ public class TeamController {
             @ApiResponse(responseCode = "404", description = "그룹을 찾지 못함")
     })
     @PostMapping("/{groupId}/cancel-deletion")
-    public ResponseEntity<?> cancelTeamDeletion(
+    public ResponseEntity<Void> cancelTeamDeletion(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long groupId
     ) {

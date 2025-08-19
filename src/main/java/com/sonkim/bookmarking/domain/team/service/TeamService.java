@@ -54,10 +54,10 @@ public class TeamService {
 
     // 그룹 상세정보 조회
     @Transactional(readOnly = true)
-    public TeamDto.ResponseDto getTeamDetails(Long teamId) {
+    public TeamDto.TeamResponseDto getTeamDetails(Long teamId) {
         Team team = getTeamById(teamId);
 
-        return TeamDto.ResponseDto.builder()
+        return TeamDto.TeamResponseDto.builder()
                 .name(team.getName())
                 .description(team.getDescription())
                 .ownerId(team.getUser().getId())
@@ -86,7 +86,7 @@ public class TeamService {
 
     // 새로운 그룹 생성
     @Transactional
-    public Team createTeam(Long userId, TeamDto.RequestDto createDto) {
+    public Team createTeam(Long userId, TeamDto.TeamRequestDto createDto) {
         log.info("userId: {}, teamName: {} 생성 요청", userId, createDto.getName());
 
         // 그룹을 생성할 사용자 정보 가져오기
@@ -117,7 +117,7 @@ public class TeamService {
 
     // 그룹 정보 수정
     @Transactional
-    public void updateTeam(Long userId, Long teamId, TeamDto.RequestDto updateDto) {
+    public void updateTeam(Long userId, Long teamId, TeamDto.TeamRequestDto updateDto) {
         log.info("userId: {}, teamId: {} 정보 수정 요청", userId, teamId);
 
         // 그룹 상태 검증
@@ -157,10 +157,10 @@ public class TeamService {
 
     // 초대 코드를 통한 그룹 정보 조회
     @Transactional(readOnly = true)
-    public TeamDto.ResponseDto getTeamPreviewByCode(String inviteCode) {
+    public TeamDto.TeamResponseDto getTeamPreviewByCode(String inviteCode) {
         Team team = getTeamByInviteCode(inviteCode);
 
-        return TeamDto.ResponseDto.builder()
+        return TeamDto.TeamResponseDto.builder()
                 .name(team.getName())
                 .description(team.getDescription())
                 .ownerId(team.getUser().getId())
