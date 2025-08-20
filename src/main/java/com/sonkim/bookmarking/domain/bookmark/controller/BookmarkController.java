@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
+    private final OGUtil ogUtil;
 
     @Operation(summary = "특정 북마크 상세 정보 조회", description = "특정 북마크의 상세 정보와 좋아요 개수를 조회합니다.")
     @ApiResponses({
@@ -77,7 +78,7 @@ public class BookmarkController {
     @GetMapping("/og-info")
     public ResponseEntity<BookmarkOGDto> getBookmarkInformation(@RequestParam String url) {
         try {
-            BookmarkOGDto info = OGUtil.getOpenGraphData(url);
+            BookmarkOGDto info = ogUtil.getOpenGraphData(url);
             return ResponseEntity.ok(info);
         } catch (Exception e) {
             throw new EntityNotFoundException("정보 추출에 실패했습니다.");
