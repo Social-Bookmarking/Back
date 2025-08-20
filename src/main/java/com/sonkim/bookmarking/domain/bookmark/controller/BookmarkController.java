@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -81,7 +80,11 @@ public class BookmarkController {
             BookmarkOGDto info = ogUtil.getOpenGraphData(url);
             return ResponseEntity.ok(info);
         } catch (Exception e) {
-            throw new EntityNotFoundException("정보 추출에 실패했습니다.");
+            // 🔽 🚨 중요: 발생한 예외(e)를 함께 로깅하여 원인을 파악합니다.
+            log.error("OG 정보 추출 중 컨트롤러에서 에러 발생. URL: {}", url, e);
+
+            // GlobalExceptionHandler가 처리하도록 예외를 다시 던집니다.
+            throw new RuntimeException("정보 추출 중 서버 오류가 발생했습니다.");
         }
     }
 }
