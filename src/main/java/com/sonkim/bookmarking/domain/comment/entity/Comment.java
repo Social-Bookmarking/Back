@@ -1,11 +1,14 @@
 package com.sonkim.bookmarking.domain.comment.entity;
 
+import com.sonkim.bookmarking.domain.comment.enums.CommentStatus;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -32,11 +35,26 @@ public class Comment {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    // 부모 댓글
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Comment parent;
+
+    // 자식 댓글 목록
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Comment> children = new ArrayList<>();
+
     // 작성일
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // 수정일
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private CommentStatus status = CommentStatus.ACTIVE;
+
+    public void softDelete() {
+        this.status = CommentStatus.DELETED;
+        this.content = "[삭제된 댓글입니다.]";
+    }
 }

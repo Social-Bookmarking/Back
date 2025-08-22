@@ -5,6 +5,7 @@ import com.sonkim.bookmarking.common.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -75,6 +76,7 @@ public class SecurityConfig {
         http
                 // 엔드포인트별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // 기본 페이지, 정적 소스들, Swagger 관련 경로, 'api/auth/**' 패턴의 URL은 모두 허용
                         .requestMatchers("/", "/css/**", "/js/**", "/images/**", "/fonts/**", "/error", "/favicon.ico",
                                 "/api/auth/**",
