@@ -25,6 +25,7 @@ public class BookmarkResponseDto {
     private boolean isLiked;
     private Long likesCount;
     private List<TagInfo> tags;
+    private Long categoryId;
 
     @Data
     @AllArgsConstructor
@@ -43,6 +44,7 @@ public class BookmarkResponseDto {
                 .latitude(bookmark.getLatitude())
                 .longitude(bookmark.getLongitude())
                 .createdAt(bookmark.getCreatedAt())
+                .categoryId(bookmark.getCategory().getId())
                 .build();
     }
 
