@@ -2,6 +2,8 @@ package com.sonkim.bookmarking.domain.mypage.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.s3.dto.PresignedUrlDto;
+import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.mypage.dto.MyProfileDto;
 import com.sonkim.bookmarking.domain.mypage.dto.PasswordDto;
@@ -30,6 +32,7 @@ public class MyPageController {
 
     private final MyPageService myPageService;
     private final TeamService teamService;
+    private final S3Service s3Service;
 
     @Operation(summary = "내 프로필 정보 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회합니다.")
     @ApiResponses({
@@ -37,17 +40,26 @@ public class MyPageController {
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @GetMapping("/profile")
-    public ResponseEntity<MyProfileDto.MyProfileRequestDto> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        MyProfileDto.MyProfileRequestDto myProfile = myPageService.getMyProfile(userDetails.getId());
+    public ResponseEntity<MyProfileDto.MyProfileResponseDto> getMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        MyProfileDto.MyProfileResponseDto myProfile = myPageService.getMyProfile(userDetails.getId());
         return ResponseEntity.ok(myProfile);
     }
 
-    @Operation(summary = "내 프로필 정보 수정", description = "현재 로그인한 사용자의 닉네임을 수정합니다.")
+    @Operation(summary = "프로필 이미지 업로드를 위한 Pre-signed URL 발급")
+    @GetMapping("/profile/upload-url")
+    public ResponseEntity<PresignedUrlDto> getProfileImageUploadUrl(
+            @RequestParam String fileName
+    ) {
+        PresignedUrlDto presignedUrlDto = s3Service.generatePresignedPutUrl(fileName);
+        return ResponseEntity.ok(presignedUrlDto);
+    }
+
+    @Operation(summary = "내 프로필 정보 수정", description = "현재 로그인한 사용자 정보를 수정합니다.")
     @ApiResponse(responseCode = "200", description = "프로필 수정 성공")
     @PatchMapping("/profile")
     public ResponseEntity<Void> updateMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                @RequestBody MyProfileDto.UpdateNicknameRequestDto updateDto) {
-        myPageService.updateNickname(userDetails.getId(), updateDto);
+                                                @RequestBody MyProfileDto.UpdateRequestDto updateDto) {
+        myPageService.updateProfile(userDetails.getId(), updateDto);
         return ResponseEntity.ok().build();
     }
 

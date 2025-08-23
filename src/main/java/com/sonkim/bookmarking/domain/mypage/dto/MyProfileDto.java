@@ -7,13 +7,14 @@ public class MyProfileDto {
 
     @Data
     @Builder
-    public static class MyProfileRequestDto {
+    public static class MyProfileResponseDto {
         private String nickname;
-        private String imageUrl;
+        private String profileImageUrl;
     }
 
     @Data
-    public static class UpdateNicknameRequestDto {
+    public static class UpdateRequestDto {
         private String nickname;
+        private String imageKey;
     }
 }

@@ -141,7 +141,7 @@ public class CommentService {
         return CommentDto.AuthorInfo.builder()
                 .userId(user.getId())
                 .nickname(user.getProfile().getNickname())
-                .profileImageUrl(user.getProfile().getImageUrl())
+                .profileImageUrl(user.getProfile().getImageKey())
                 .build();
     }
 }
