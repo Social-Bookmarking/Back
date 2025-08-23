@@ -70,7 +70,7 @@ public class TeamMemberService {
                 .map(member -> TeamMemberDto.MemberResponseDto.builder()
                         .userId(member.getUser().getId())
                         .name(member.getUser().getProfile().getNickname())
-                        .profileImageUrl(member.getUser().getProfile().getImageUrl())
+                        .profileImageUrl(member.getUser().getProfile().getImageKey())
                         .permission(member.getPermission())
                         .build())
                 .collect(Collectors.toList());

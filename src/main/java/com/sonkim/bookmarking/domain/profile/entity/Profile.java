@@ -22,20 +22,20 @@ public class Profile {
 
     // 프로필 이미지
     @Column(columnDefinition = "TEXT")
-    private String imageUrl;
+    private String imageKey;
 
     // 정보 수정일
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    public void updateNickname(String nickname) {
-        this.nickname = nickname;
-        updatedAt = LocalDateTime.now();
+    public void update(String nickname, String imageKey) {
+        if (nickname != null) this.nickname = nickname;
+        if (imageKey != null) this.imageKey = imageKey;
     }
 
     // 탈퇴 처리
     public void anonymize() {
         this.nickname = "탈퇴한 사용자";
-        this.imageUrl = null;
+        this.imageKey = null;
     }
 }

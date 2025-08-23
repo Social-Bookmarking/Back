@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.mypage.service;
 
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
@@ -31,29 +32,42 @@ public class MyPageService {
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkService bookmarkService;
     private final UserService userService;
+    private final S3Service s3Service;
 
     @Transactional(readOnly = true)
-    public MyProfileDto.MyProfileRequestDto getMyProfile(Long userId) {
+    public MyProfileDto.MyProfileResponseDto getMyProfile(Long userId) {
         // 프로필 정보 조회
         User user = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
+        String imageUrl = null;
+        String imageKey = user.getProfile().getImageKey();
+
+        if (imageKey != null) {
+            imageUrl = s3Service.generatePresignedGetUrl("profile-images/", imageKey).toString();
+        }
 
         // DTO로 변환하여 반환
-        return MyProfileDto.MyProfileRequestDto.builder()
+        return MyProfileDto.MyProfileResponseDto.builder()
                 .nickname(user.getProfile().getNickname())
-                .imageUrl(user.getProfile().getImageUrl())
+                .profileImageUrl(imageUrl)
                 .build();
     }
 
-    // 닉네임 변경
+    // 프로필 업데이트
     @Transactional
-    public void updateNickname(Long userId, MyProfileDto.UpdateNicknameRequestDto requestDto) {
-        log.info("userId: {} 닉네임 변경 요청", userId);
+    public void updateProfile(Long userId, MyProfileDto.UpdateRequestDto updateRequestDto) {
+        log.info("userId: {} 프로필 업데이트 요청", userId);
 
         User user = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
 
-        user.getProfile().updateNickname(requestDto.getNickname());
+        String imageKey = updateRequestDto.getImageKey();
+
+        if (imageKey != null && !imageKey.isBlank()) {
+            s3Service.moveFileToPermanentStorage("profile-images/", imageKey);
+        }
+
+        user.getProfile().update(updateRequestDto.getNickname(), updateRequestDto.getImageKey());
     }
 
     // 비밀번호 변경
