@@ -43,6 +43,10 @@ public class NaverMapOgStrategy implements OgExtractorStrategy{
                 return OGUtil.extractOgTags(doc);
             }
         } catch (Exception e) {
+            log.warn("네이버 지도 Timeout: {}", e.getMessage());
+            if (driver != null) {
+                log.warn("Timeout 발생 시점의 HTML:\n{}", driver.getPageSource());
+            }
             throw new RuntimeException("OpenGraph 정보 추출 중 오류 발생", e);
         } finally {
             if (driver != null) {
