@@ -1,6 +1,8 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.s3.service.S3Service;
+import com.sonkim.bookmarking.common.service.ImageProcessingService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
@@ -42,6 +44,8 @@ public class BookmarkService {
     private final TeamService teamService;
     private final TeamMemberService teamMemberService;
     private final UserService userService;
+    private final ImageProcessingService imageProcessingService;
+    private final S3Service s3Service;
 
     // 북마크 등록
     @Transactional
@@ -59,7 +63,11 @@ public class BookmarkService {
 
         User user = userService.getUserById(userId);
         Team team = teamService.getTeamById(teamId);
-        Category category = categoryService.getCategoryById(request.getCategoryId());
+        Category category = null;
+
+        if (request.getCategoryId() != null) {
+            category = categoryService.getCategoryById(request.getCategoryId());
+        }
 
         Bookmark bookmark = Bookmark.builder()
                 .user(user)
@@ -68,7 +76,7 @@ public class BookmarkService {
                 .url(request.getUrl())
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
+                .originalImageUrl(request.getImageUrl())
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .build();
@@ -89,6 +97,9 @@ public class BookmarkService {
             }
         }
 
+        // 비동기 작업 호출
+        imageProcessingService.downloadAndUploadToS3(bookmark.getId(), request.getImageUrl());
+
         return bookmark;
     }
 
@@ -104,7 +115,17 @@ public class BookmarkService {
         Bookmark bookmark = getBookmarkById(bookmarkId);
         boolean isLiked = bookmarkLikeRepository.existsBookmarkLikeByUser_IdAndBookmark_Id(userID, bookmarkId);
         Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
-        return BookmarkResponseDto.fromEntityWithLikes(bookmark, isLiked, likesCount);
+        BookmarkResponseDto response = BookmarkResponseDto.fromEntityWithLikes(bookmark, isLiked, likesCount);
+
+        String finalImageUrl = null;
+        if (bookmark.getImageKey() != null) {
+            finalImageUrl = s3Service.generatePresignedGetUrl("bookmarks/", bookmark.getImageKey()).toString();
+        } else if (bookmark.getOriginalImageUrl() != null) {
+            finalImageUrl = bookmark.getOriginalImageUrl();
+        }
+        response.setImageUrl(finalImageUrl);
+
+        return response;
     }
 
     // 북마크 정보 갱신

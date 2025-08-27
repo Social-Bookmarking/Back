@@ -49,9 +49,13 @@ public class Bookmark {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // 썸네일
+    // 임시 원본 이미지
     @Column(columnDefinition = "TEXT")
-    private String imageUrl;
+    private String originalImageUrl;
+
+    // 최종 이미지 파일 키
+    @Column(length = 255)
+    private String imageKey;
 
     private Double latitude;        // 위도
     private Double longitude;       // 경도
@@ -83,9 +87,17 @@ public class Bookmark {
     public void update(BookmarkRequestDto dto) {
         if(dto.getTitle() != null) this.title = dto.getTitle();
         if(dto.getDescription() != null) this.description = dto.getDescription();
-        if(dto.getImageUrl() != null) this.imageUrl = dto.getImageUrl();
+        if(dto.getImageUrl() != null) this.originalImageUrl = dto.getImageUrl();
         if(dto.getLatitude() != null) this.latitude = dto.getLatitude();
         if(dto.getLongitude() != null) this.longitude = dto.getLongitude();
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateImageKey(String imageKey) {
+        this.imageKey = imageKey;
+    }
+
+    public void updateOriginalImageUrl(String originalImageUrl) {
+        this.originalImageUrl = originalImageUrl;
     }
 }

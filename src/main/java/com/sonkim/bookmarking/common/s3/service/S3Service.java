@@ -1,8 +1,10 @@
 package com.sonkim.bookmarking.common.s3.service;
 
 import com.sonkim.bookmarking.common.s3.dto.PresignedUrlDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -16,6 +18,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class S3Service {
 
@@ -82,5 +85,41 @@ public class S3Service {
         s3Client.deleteObject(builder -> builder
                 .bucket(bucketName)
                 .key(sourceKey));
+    }
+
+    public String uploadImageBytes(byte[] imageBytes, String fileName, String prefix) {
+        // 파일 이름이 중복되지 않도록 UUID 사용
+        String key = UUID.randomUUID() + "_" + fileName;
+        String fullKey = prefix + key;
+
+        // 확장자 인식
+        String contentType = getContentType(fileName);
+
+        // S3에 업로드할 객체 요청 생성
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fullKey)
+                .contentType(contentType)
+                .contentDisposition("inline")
+                .build();
+
+        // 파일 업로드
+        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
+
+        return key;
+    }
+
+    private String getContentType(String fileName) {
+        // 파일 이름에서 마지막 '.' 이후의 문자열을 확장자로 간주
+        String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+
+        return switch (extension) {
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png" -> "image/png";
+            case "gif" -> "image/gif";
+            default ->
+                // 알려지지 않은 확장자는 일반적인 바이너리 파일 타입으로 처리
+                    "application/octet-stream";
+        };
     }
 }

@@ -7,14 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
+import java.net.URL;
 
 @Slf4j
 @Component
@@ -25,35 +22,29 @@ public class NaverBlogOgStrategy implements OgExtractorStrategy {
 
     @Override
     public boolean supports(String url) {
-        return url.contains("blog.naver.com");
+        return url.contains("blog.naver.com") || url.contains("m.blog.naver.com");
     }
 
     @Override
-    public BookmarkOGDto extract(String url) {
-        log.info("네이버 블로그 URL 감지. 'mainFrame'을 이용하여 추출");
-        WebDriver driver = null;
+    public BookmarkOGDto extract(String urlString) {
+        log.info("네이버 블로그 URL 감지. 모바일 버전을 이용하여 태그 추출");
+
+        String targetUrl = urlString;
+
         try {
-            driver = driverPool.borrowObject();
-            driver.get(url);
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.id("mainFrame")));
+            URL url = new URL(urlString);
+            String host = url.getHost();
 
-            if (driver.getPageSource() != null) {
-                Document doc = Jsoup.parse(driver.getPageSource());
-                return OGUtil.extractOgTags(doc);
+            if (host.equals("blog.naver.com")) {
+                targetUrl = urlString.replaceFirst("blog.naver.com", "m.blog.naver.com");
             }
+
+            Document doc = Jsoup.connect(targetUrl).get();
+            return OGUtil.extractOgTags(doc);
+
         } catch (Exception e) {
+            log.error("네이버 블로그 OG 태그 추출 중 오류 발생 : {}", e.getMessage());
             throw new RuntimeException("OpenGraph 정보 추출 중 오류 발생", e);
-        } finally {
-            if (driver != null) {
-                try {
-                    driverPool.returnObject(driver);
-                } catch (Exception e) {
-                    log.error("드라이버 반환 중 오류 발생", e);
-                }
-            }
         }
-
-        return new BookmarkOGDto();
     }
 }

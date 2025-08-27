@@ -35,17 +35,21 @@ public class BookmarkResponseDto {
     }
 
     public static BookmarkResponseDto fromEntity(Bookmark bookmark) {
-        return BookmarkResponseDto.builder()
+        BookmarkResponseDto response = BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .url(bookmark.getUrl())
                 .title(bookmark.getTitle())
                 .description(bookmark.getDescription())
-                .imageUrl(bookmark.getImageUrl())
                 .latitude(bookmark.getLatitude())
                 .longitude(bookmark.getLongitude())
                 .createdAt(bookmark.getCreatedAt())
-                .categoryId(bookmark.getCategory().getId())
                 .build();
+
+        if(bookmark.getCategory() != null) {
+            response.categoryId = bookmark.getCategory().getId();
+        }
+
+        return response;
     }
 
     public static BookmarkResponseDto fromEntityWithLikes(Bookmark bookmark, boolean isLiked, Long likesCount) {
