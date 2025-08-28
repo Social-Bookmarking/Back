@@ -15,6 +15,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -34,30 +35,42 @@ public class NaverMapOgStrategy implements OgExtractorStrategy{
         WebDriver driver = null;
         try {
             driver = driverPool.borrowObject();
+            log.info("WebDriver 빌림 (borrowObject). 해시코드: {}", driver.hashCode());
+
             driver.get(url);
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.id("entryIframe")));
+            Document doc = Jsoup.parse(Objects.requireNonNull(driver.getPageSource()));
+            BookmarkOGDto dto = OGUtil.extractOgTags(doc);
 
-            if (driver.getPageSource() != null) {
-                Document doc = Jsoup.parse(driver.getPageSource());
-                return OGUtil.extractOgTags(doc);
-            }
+            driverPool.returnObject(driver);
+            log.info("WebDriver 반납 (returnObject). 해시코드: {}", driver.hashCode());
+            driver = null;
+
+            return dto;
+
         } catch (Exception e) {
-            log.warn("네이버 지도 Timeout: {}", e.getMessage());
             if (driver != null) {
-                log.warn("Timeout 발생 시점의 HTML:\n{}", driver.getPageSource());
+                try {
+                    // 문제가 생겼을 수도 있는 인스턴스는 폐기
+                    driverPool.invalidateObject(driver);
+                    log.warn("문제 발생 WebDriver 폐기 (invalidateObject). 해시코드: {}", driver.hashCode());
+                    driver = null; // 폐기 후 참조를 끊어줌
+                } catch (Exception ex) {
+                    log.error("오류 발생 드라이버 무효화 실패", ex);
+                }
             }
+
             throw new RuntimeException("OpenGraph 정보 추출 중 오류 발생", e);
         } finally {
             if (driver != null) {
                 try {
+                    log.error("finally 블록에서 드라이버가 아직 처리되지 않음! 강제 반납. 해시코드: {}", driver.hashCode());
                     driverPool.returnObject(driver);
-                } catch (Exception e) {
-                    log.error("드라이버 반환 중 오류 발생", e);
+                } catch (Exception ex) {
+                    log.error("드라이버 최종 반납 중 오류 발생", ex);
                 }
             }
         }
-
-        return new BookmarkOGDto();
     }
 }

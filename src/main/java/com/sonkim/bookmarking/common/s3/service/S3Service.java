@@ -87,6 +87,14 @@ public class S3Service {
                 .key(sourceKey));
     }
 
+    public void deleteFile(String prefix, String key) {
+        String sourceKey = prefix + key;
+
+        s3Client.deleteObject(builder -> builder
+                .bucket(bucketName)
+                .key(sourceKey));
+    }
+
     public String uploadImageBytes(byte[] imageBytes, String fileName, String prefix) {
         // 파일 이름이 중복되지 않도록 UUID 사용
         String key = UUID.randomUUID() + "_" + fileName;
