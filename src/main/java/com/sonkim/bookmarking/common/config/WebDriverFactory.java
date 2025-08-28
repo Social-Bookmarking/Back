@@ -32,7 +32,7 @@ public class WebDriverFactory extends BasePooledObjectFactory<WebDriver> {
     @Override
     public void destroyObject(PooledObject<WebDriver> p) {
         log.info(">>>> WebDriver 인스턴스 폐기");
-        p.getObject().close();
+        p.getObject().quit();
     }
 
     @Override
