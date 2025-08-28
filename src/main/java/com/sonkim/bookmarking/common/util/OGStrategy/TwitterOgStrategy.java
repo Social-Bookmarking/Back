@@ -15,6 +15,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -34,8 +35,11 @@ public class TwitterOgStrategy implements OgExtractorStrategy{
         WebDriver driver = null;
         try {
             driver = driverPool.borrowObject();
+            log.info("WebDriver 빌림 (borrowObject). 해시코드: {}", driver.hashCode());
+
             driver.get(url);
 
+            // TimeoutException 처리
             try {
                 WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
                 wait.until(ExpectedConditions.not(ExpectedConditions.titleIs("X")));
@@ -43,22 +47,39 @@ public class TwitterOgStrategy implements OgExtractorStrategy{
                 log.warn("민감한 콘텐츠이거나 로그인이 필요할 수 있습니다. URL: {}", url);
             }
 
-            if (driver.getPageSource() != null) {
-                Document doc = Jsoup.parse(driver.getPageSource());
-                return OGUtil.extractOgTags(doc);
-            }
+            // 현재 페이지 소스를 기반으로 DTO 추출
+            Document doc = Jsoup.parse(Objects.requireNonNull(driver.getPageSource()));
+            BookmarkOGDto dto = OGUtil.extractOgTags(doc);
+
+            // 성공 시 드라이버 풀에 반납
+            driverPool.returnObject(driver);
+            log.info("WebDriver 반납 (returnObject). 해시코드: {}", driver.hashCode());
+            driver = null;
+
+            return dto;
+
         } catch (Exception e) {
+            log.warn("Twitter OG 정보 추출 중 예외 발생: {}", e.getMessage());
+            // 실패 시, 문제 발생 드라이버는 폐기
+            if (driver != null) {
+                try {
+                    driverPool.invalidateObject(driver);
+                    log.warn("문제 발생 WebDriver 폐기 (invalidateObject). 해시코드: {}", driver.hashCode());
+                    driver = null;
+                } catch (Exception ex) {
+                    log.error("오류 발생 드라이버 무효화 실패", ex);
+                }
+            }
             throw new RuntimeException("OpenGraph 정보 추출 중 오류 발생", e);
         } finally {
             if (driver != null) {
                 try {
+                    log.error("finally 블록에서 드라이버가 아직 처리되지 않음! 강제 반납. 해시코드: {}", driver.hashCode());
                     driverPool.returnObject(driver);
-                } catch (Exception e) {
-                    log.error("드라이버 반환 중 오류 발생", e);
+                } catch (Exception ex) {
+                    log.error("드라이버 최종 반납 중 오류 발생", ex);
                 }
             }
         }
-
-        return new BookmarkOGDto();
     }
 }

@@ -69,6 +69,20 @@ public class BookmarkService {
             category = categoryService.getCategoryById(request.getCategoryId());
         }
 
+        String imageKey = null;
+        String originalImageUrl = null;
+
+        if (request.getImageKey() != null && !request.getImageKey().isEmpty()) {
+            // 사용자가 직접 이미지를 업로드한 경우
+            // 파일을 temp -> bookmarks로 이동
+            s3Service.moveFileToPermanentStorage("bookmarks/", request.getImageKey());
+            imageKey = request.getImageKey();
+        } else if (request.getOriginalImageUrl() != null && !request.getOriginalImageUrl().isEmpty()) {
+            // OG 이미지 그대로 사용하는 경우
+            // 임시 저장 후 비동기 처리 요청
+            originalImageUrl = request.getOriginalImageUrl();
+        }
+
         Bookmark bookmark = Bookmark.builder()
                 .user(user)
                 .team(team)
@@ -76,11 +90,18 @@ public class BookmarkService {
                 .url(request.getUrl())
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .originalImageUrl(request.getImageUrl())
+                .originalImageUrl(originalImageUrl)
+                .imageKey(imageKey)
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .build();
+
         bookmarkRepository.save(bookmark);
+
+        // 비동기 작업 호출
+        if (originalImageUrl != null) {
+            imageProcessingService.downloadAndUploadToS3(bookmark.getId(), originalImageUrl);
+        }
 
         List<Long> tagIds = request.getTagIds();
         if (tagIds != null && !tagIds.isEmpty()) {
@@ -96,9 +117,6 @@ public class BookmarkService {
                 bookmarkTagRepository.save(bookmarkTag);
             }
         }
-
-        // 비동기 작업 호출
-        imageProcessingService.downloadAndUploadToS3(bookmark.getId(), request.getImageUrl());
 
         return bookmark;
     }
@@ -141,9 +159,35 @@ public class BookmarkService {
             throw new AuthorizationDeniedException("해당 북마크를 수정할 권한이 없습니다.");
         }
 
+        // 카테고리 업데이트
         if(dto.getCategoryId() != null) {
             Category category = categoryService.getCategoryById(dto.getCategoryId());
             bookmark.updateCategory(category);
+        }
+
+        // 이미지 업데이트
+        String oldImageKey = bookmark.getImageKey();
+
+        if (dto.getImageKey() != null) {
+            if (dto.getImageKey().isEmpty()) {
+                // 이미지를 삭제하려는 경우
+                bookmark.updateImageKey(null);
+                if (oldImageKey != null) {
+                    s3Service.deleteFile("bookmarks/", oldImageKey);
+                }
+            } else {
+                // 이미지를 변경하려는 경우
+                s3Service.moveFileToPermanentStorage("bookmarks/", dto.getImageKey());
+                bookmark.updateImageKey(dto.getImageKey());
+                if (oldImageKey != null) {
+                    s3Service.deleteFile("bookmarks/", oldImageKey);
+                }
+
+                // 기존 OG 이미지는 삭제
+                if (bookmark.getOriginalImageUrl() != null) {
+                    bookmark.updateOriginalImageUrl(null);
+                }
+            }
         }
 
         bookmark.update(dto);

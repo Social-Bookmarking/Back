@@ -32,6 +32,7 @@ public class WebDriverConfig {
         config.setJmxEnabled(false);
         config.setTimeBetweenEvictionRuns(Duration.ofMinutes(10));          // 10분마다 유휴 객체 검사
         config.setSoftMinEvictableIdleDuration(Duration.ofMinutes(30));     // 30분 이상 사용되지 않은 객체는 풀에서 제거
+        config.setTestWhileIdle(true);
 
         WebDriverFactory factory = new WebDriverFactory(options);
         return new GenericObjectPool<>(factory, config);

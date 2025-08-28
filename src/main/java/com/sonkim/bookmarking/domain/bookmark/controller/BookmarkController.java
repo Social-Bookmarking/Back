@@ -1,6 +1,8 @@
 package com.sonkim.bookmarking.domain.bookmark.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
+import com.sonkim.bookmarking.common.s3.dto.PresignedUrlDto;
+import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
@@ -25,6 +27,7 @@ public class BookmarkController {
 
     private final BookmarkService bookmarkService;
     private final OGUtil ogUtil;
+    private final S3Service s3Service;
 
     @Operation(summary = "특정 북마크 상세 정보 조회", description = "특정 북마크의 상세 정보와 좋아요 개수를 조회합니다.")
     @ApiResponses({
@@ -86,5 +89,14 @@ public class BookmarkController {
             // GlobalExceptionHandler가 처리하도록 예외를 다시 던집니다.
             throw new RuntimeException("정보 추출 중 서버 오류가 발생했습니다.");
         }
+    }
+
+    @Operation(summary = "북마크 이미지 업로드를 위한 Pre-signed URL 발급")
+    @GetMapping("/upload-url")
+    public ResponseEntity<PresignedUrlDto> getBookmarkPreSignedUrl(
+            @RequestParam String fileName
+    ) {
+        PresignedUrlDto presignedUrlDto = s3Service.generatePresignedPutUrl(fileName);
+        return ResponseEntity.ok(presignedUrlDto);
     }
 }
