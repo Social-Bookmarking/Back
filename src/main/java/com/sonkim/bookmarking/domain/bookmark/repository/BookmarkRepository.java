@@ -19,6 +19,9 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
     // 특정 카테고리의 북마크 페이징 조회
     Page<Bookmark> findAllByTeam_IdAndCategory_Id(Long teamId, Long categoryId, Pageable pageable);
 
+    // 위도와 경도가 저장되어 있는 북마크만 조회
+    Page<Bookmark> findByTeam_IdAndLatitudeIsNotNullAndLongitudeIsNotNull(Long teamId, Pageable pageable);
+
     // 검색 키워드를 바탕으로 북마크 페이징 조회
     @Query("SELECT b FROM Bookmark b " +
             "WHERE b.team.id = :teamId " +
