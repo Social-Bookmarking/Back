@@ -269,6 +269,13 @@ public class BookmarkService {
         return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
+    @Transactional(readOnly = true)
+    public PageResponseDto<BookmarkResponseDto> getBookmarksForMap(Long teamId, Pageable pageable) {
+        Page<Bookmark> bookmarks = bookmarkRepository.findByTeam_IdAndLatitudeIsNotNullAndLongitudeIsNotNull(teamId, pageable);
+        return enrichBookmarksWithDetails(bookmarks, teamId);
+    }
+
+    // 추가 정보 채우기
     public PageResponseDto<BookmarkResponseDto> enrichBookmarksWithDetails(Page<Bookmark> bookmarks, Long userId) {
         List<Long> bookmarkIds = bookmarks.getContent().stream().map(Bookmark::getId).toList();
 

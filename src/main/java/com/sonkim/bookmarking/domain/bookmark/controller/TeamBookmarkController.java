@@ -99,4 +99,18 @@ public class TeamBookmarkController {
 
         return ResponseEntity.ok(bookmarkList);
     }
+
+    @Operation(summary = "그룹 내 모든 북마크 조회 (페이징, 위도/경도 포함한 북마크만)",
+            description = "특정 그룹에 속한 모든 북마크 중 위도와 경도 정보를 가진 북마크를 페이징하여 조회합니다.",
+            parameters = {
+                    @Parameter(name = "page", description = "표시할 페이지 (1부터 시작)")
+            })
+    @GetMapping("/{groupId}/bookmarks/map")
+    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksForMap(
+            @Parameter(description = "북마크를 조회할 그룹 ID") @PathVariable("groupId") Long groupId,
+            @Parameter(hidden = true) @PageableDefault(size = 20) Pageable pageable
+    ) {
+        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.getBookmarksForMap(groupId, pageable);
+        return ResponseEntity.ok(bookmarks);
+    }
 }
