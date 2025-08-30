@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,7 +19,9 @@ public class OGUtil {
 
     private final List<OgExtractorStrategy> strategies;
 
+    @Cacheable(value = "ogData", key = "#url")
     public BookmarkOGDto getOpenGraphData(String url) {
+        log.info(">>>> OG Data Caching... URL: {}", url);
         return strategies.stream()
                 .filter(s -> s.supports(url))
                 .findFirst()

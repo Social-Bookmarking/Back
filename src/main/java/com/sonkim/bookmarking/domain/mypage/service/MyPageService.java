@@ -94,16 +94,16 @@ public class MyPageService {
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getMyBookmarks(Long userId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByUser_Id(userId, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.convertToDto(userId, bookmark.getId()));
-        return new PageResponseDto<>(dtoPage);
+
+        return bookmarkService.enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 사용자가 좋아요를 누른 북마크 조회
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getMyLikedBookmarks(Long userId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findLikedBookmarksByUser_Id(userId, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> bookmarkService.convertToDto(userId, bookmark.getId()));
-        return new PageResponseDto<>(dtoPage);
+
+        return bookmarkService.enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 탈퇴 처리

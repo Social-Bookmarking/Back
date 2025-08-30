@@ -4,6 +4,7 @@ import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.common.service.ImageProcessingService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.LikeCountDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkTagRepository;
@@ -29,7 +30,10 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -129,18 +133,24 @@ public class BookmarkService {
     }
 
     @Transactional(readOnly = true)
-    public BookmarkResponseDto convertToDto(Long userID, Long bookmarkId) {
+    public BookmarkResponseDto getBookmarkDetails(Long userID, Long bookmarkId) {
         Bookmark bookmark = getBookmarkById(bookmarkId);
-        boolean isLiked = bookmarkLikeRepository.existsBookmarkLikeByUser_IdAndBookmark_Id(userID, bookmarkId);
-        Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
-        BookmarkResponseDto response = BookmarkResponseDto.fromEntityWithLikes(bookmark, isLiked, likesCount);
 
-        String finalImageUrl = null;
-        if (bookmark.getImageKey() != null) {
-            finalImageUrl = s3Service.generatePresignedGetUrl("bookmarks/", bookmark.getImageKey()).toString();
-        } else if (bookmark.getOriginalImageUrl() != null) {
-            finalImageUrl = bookmark.getOriginalImageUrl();
-        }
+        // 좋아요 수, 좋아요 여부, 태그 정보 조회
+        Long likesCount = bookmarkLikeRepository.countBookmarkLikesByBookmark_Id(bookmarkId);
+        boolean isLiked = bookmarkLikeRepository.existsBookmarkLikeByUser_IdAndBookmark_Id(userID, bookmarkId);
+        List<BookmarkResponseDto.TagInfo> tags = bookmark.getBookmarkTags().stream()
+                .map(bookmarkTag -> new BookmarkResponseDto.TagInfo(
+                        bookmarkTag.getTag().getId(),
+                        bookmarkTag.getTag().getName()
+                ))
+                .toList();
+
+        // 데이터 조합
+        BookmarkResponseDto response = BookmarkResponseDto.from(bookmark, isLiked, likesCount, tags);
+
+        // 이미지 URL 생성
+        String finalImageUrl = getFinalImageUrl(bookmark);
         response.setImageUrl(finalImageUrl);
 
         return response;
@@ -219,54 +229,85 @@ public class BookmarkService {
     // 그룹 내 모든 북마크 조회
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getBookmarksByTeamId(Long userId, Long teamId, Pageable pageable) {
+        // 북마크 페이징 조회
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_Id(teamId, pageable);
-
-        // BookmarkDto로 변환하여 전달
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> convertToDto(userId, bookmark.getId()));
-
-        return new PageResponseDto<>(dtoPage);
+        return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 특정 카테고리에 속한 북마크 조회
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long userId, Long teamId, Long categoryId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_Id(teamId, categoryId, pageable);
-
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> convertToDto(userId, bookmark.getId()));
-
-        return new PageResponseDto<>(dtoPage);
+        return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 북마크 검색
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> searchBookmarksByTeamId(Long userId, Long teamId, String keyword, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndKeyword(teamId, keyword, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> convertToDto(userId, bookmark.getId()));
-        return new PageResponseDto<>(dtoPage);
+        return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 북마크 검색(특정 카테고리 내)
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> searchBookmarksByTeamIdAndCategoryId(Long userId, Long teamId, Long categoryId, String keyword, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_IdAndKeyword(teamId, categoryId, keyword, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> convertToDto(userId, bookmark.getId()));
-        return new PageResponseDto<>(dtoPage);
+        return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 북마크 태그 검색
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getBookmarksByTagInGroup(Long userId, Long teamId, Long tagId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findByTeam_IdAndTag_Id(teamId, tagId, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> convertToDto(userId, bookmark.getId()));
-        return new PageResponseDto<>(dtoPage);
+        return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 북마크 태그 검색(특정 카테고리 내)
     @Transactional(readOnly = true)
     public PageResponseDto<BookmarkResponseDto> getBookmarksByTagInCategory(Long userId, Long teamId, Long categoryId, Long tagId, Pageable pageable) {
         Page<Bookmark> bookmarks = bookmarkRepository.findByCategory_IdAndTag_Id(teamId, categoryId, tagId, pageable);
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> convertToDto(userId, bookmark.getId()));
+        return enrichBookmarksWithDetails(bookmarks, userId);
+    }
+
+    public PageResponseDto<BookmarkResponseDto> enrichBookmarksWithDetails(Page<Bookmark> bookmarks, Long userId) {
+        List<Long> bookmarkIds = bookmarks.getContent().stream().map(Bookmark::getId).toList();
+
+        // 좋아요 개수, 좋아요 여부, 태그 정보 전부 다 가져오기
+        Map<Long, Long> likesCountMap = bookmarkLikeRepository.findLikesCountForBookmarks(bookmarkIds)
+                .stream().collect(Collectors.toMap(LikeCountDto::getBookmarkId, LikeCountDto::getCount));
+        List<Long> likedBookmarkIds = bookmarkLikeRepository.findLikedBookmarkIdsForUser(userId, bookmarkIds);
+        List<BookmarkTag> allBookmarkTags = bookmarkTagRepository.findAllByBookmarkIdsWithTags(bookmarkIds);
+        Map<Long, List<BookmarkResponseDto.TagInfo>> tagsMap = allBookmarkTags.stream()
+                .collect(Collectors.groupingBy(
+                        bt -> bt.getBookmark().getId(),
+                        Collectors.mapping(
+                                bt -> new BookmarkResponseDto.TagInfo(bt.getTag().getId(), bt.getTag().getName()),
+                                Collectors.toList()
+                        )
+                ));
+
+        // 데이터 조합
+        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> {
+            long likesCount = likesCountMap.getOrDefault(bookmark.getId(), 0L);
+            boolean isLiked = likedBookmarkIds.contains(bookmark.getId());
+            List<BookmarkResponseDto.TagInfo> tags = tagsMap.getOrDefault(bookmark.getId(), Collections.emptyList());
+
+            BookmarkResponseDto dto = BookmarkResponseDto.from(bookmark, isLiked, likesCount, tags);
+
+            String finalImageUrl = getFinalImageUrl(bookmark);
+            dto.setImageUrl(finalImageUrl);
+            return dto;
+        });
+
         return new PageResponseDto<>(dtoPage);
     }
 
+    private String getFinalImageUrl(Bookmark bookmark) {
+        if (bookmark.getImageKey() != null) {
+            return s3Service.generatePresignedGetUrl("bookmarks/", bookmark.getImageKey()).toString();
+        } else if (bookmark.getOriginalImageUrl() != null) {
+            return bookmark.getOriginalImageUrl();
+        }
+        return null;
+    }
 }

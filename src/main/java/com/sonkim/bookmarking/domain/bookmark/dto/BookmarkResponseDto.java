@@ -34,7 +34,7 @@ public class BookmarkResponseDto {
         private String tagName;
     }
 
-    public static BookmarkResponseDto fromEntity(Bookmark bookmark) {
+    public static BookmarkResponseDto from(Bookmark bookmark, boolean isLiked, Long likesCount, List<TagInfo> tags) {
         BookmarkResponseDto response = BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .url(bookmark.getUrl())
@@ -43,30 +43,15 @@ public class BookmarkResponseDto {
                 .latitude(bookmark.getLatitude())
                 .longitude(bookmark.getLongitude())
                 .createdAt(bookmark.getCreatedAt())
+                .isLiked(isLiked)
+                .likesCount(likesCount)
+                .tags(tags)
                 .build();
 
-        if(bookmark.getCategory() != null) {
+        if (bookmark.getCategory() != null) {
             response.categoryId = bookmark.getCategory().getId();
         }
 
         return response;
-    }
-
-    public static BookmarkResponseDto fromEntityWithLikes(Bookmark bookmark, boolean isLiked, Long likesCount) {
-        BookmarkResponseDto dto = fromEntity(bookmark);
-        dto.isLiked = isLiked;
-        dto.likesCount = likesCount;
-
-        if (bookmark.getBookmarkTags() != null) {
-            List<TagInfo> tagInfos = bookmark.getBookmarkTags().stream()
-                    .map(bookmarkTag -> new TagInfo(
-                            bookmarkTag.getTag().getId(),
-                            bookmarkTag.getTag().getName()
-                    ))
-                    .toList();
-            dto.setTags(tagInfos);
-        }
-
-        return dto;
     }
 }
