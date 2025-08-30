@@ -1,7 +1,5 @@
-package com.sonkim.bookmarking;
+package com.sonkim.bookmarking.common.exception;
 
-import com.sonkim.bookmarking.common.exception.DuplicateBookmarkLikeException;
-import com.sonkim.bookmarking.common.exception.MemberAlreadyExistsException;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;

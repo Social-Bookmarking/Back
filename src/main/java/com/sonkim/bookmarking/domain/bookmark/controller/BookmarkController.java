@@ -39,7 +39,7 @@ public class BookmarkController {
             @PathVariable("bookmarkId") Long bookmarkId,
             @AuthenticationPrincipal UserDetailsImpl userDetails
     ) {
-        BookmarkResponseDto responseDto = bookmarkService.convertToDto(userDetails.getId(), bookmarkId);
+        BookmarkResponseDto responseDto = bookmarkService.getBookmarkDetails(userDetails.getId(), bookmarkId);
         return ResponseEntity.ok(responseDto);
     }
 
