@@ -5,6 +5,9 @@ APP_NAME=MarkSphere
 JAR_NAME=$(ls $REPOSITORY/build/libs/ | grep '.jar' | tail -n 1)
 JAR_PATH=$REPOSITORY/build/libs/$JAR_NAME
 
+echo "> $JAR_PATH 에 실행 권한 추가"
+chmod +x $JAR_PATH
+
 PORT=8080
 CURRENT_PID=$(lsof -t -i:$PORT)
 
@@ -29,4 +32,4 @@ fi
 echo "> $JAR_PATH 배포"
 nohup java -jar \
     -Dspring.profiles.active=dev \
-    $JAR_PATH > /home/ubuntu/nohup.out 2>&1 &
+    $JAR_PATH > /home/ec2-user/nohup.out 2>&1 &
