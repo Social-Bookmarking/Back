@@ -34,15 +34,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # yml 파일 생성(1) - application.yml
-      - name: make application.yml
-        run: |
-          cd ./src/main/resources # resources 폴더로 이동
-          echo "${{ secrets.PROPERTIES }}" > ./application.properties # github actions에서 설정한 값을 application.properties 파일에 쓰기
-          echo "${{ secrets.DEV_PROPERTIES }}" > ./application-dev.properties # github actions에서 설정한 값을 application-dev.properties 파일에 쓰기
-          echo "${{ secrets.PROD_PROPERTIES }}" > ./application-prod.properties # github actions에서 설정한 값을 application-prod.properties 파일에 쓰기
-        shell: bash
-
       # gradle build
       - name: Build with Gradle
         run: |
