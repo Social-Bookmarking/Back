@@ -100,10 +100,6 @@ public class TeamService {
                 .build();
         teamRepository.save(newTeam);
 
-        // 초대 코드 생성
-        String inviteCode = generateInviteCode(userId, newTeam.getId());
-        newTeam.updateCode(inviteCode);
-
         // 생성자를 멤버로 추가
         TeamMember member = TeamMember.builder()
                 .user(owner)
@@ -111,6 +107,10 @@ public class TeamService {
                 .permission(Permission.ADMIN)
                 .build();
         teamMemberService.save(member);
+
+        // 초대 코드 생성
+        String inviteCode = generateInviteCode(userId, newTeam.getId());
+        newTeam.updateCode(inviteCode);
 
         return newTeam;
     }
