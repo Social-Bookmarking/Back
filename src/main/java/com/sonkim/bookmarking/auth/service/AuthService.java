@@ -82,6 +82,9 @@ public class AuthService {
                 .build();
         teamMemberService.save(membership);
 
+        // 그룹 초대 코드 생성
+        teamService.generateInviteCode(newUser.getId(), personalTeam.getId());
+
         return newUser;
     }
 

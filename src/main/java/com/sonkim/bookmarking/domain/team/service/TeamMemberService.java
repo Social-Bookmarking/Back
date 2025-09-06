@@ -36,7 +36,7 @@ public class TeamMemberService {
     @Transactional(readOnly = true)
     public Permission getUserPermissionInTeam(Long userId, Long teamId) {
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(userId, teamId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. userId=" + userId + " teamId=" + teamId));
 
         return member.getPermission();
     }
@@ -85,7 +85,7 @@ public class TeamMemberService {
 
         // 역할을 변경할 유저 정보 가져오기
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. memberId: " + memberId + ", teamId: " + teamId));
 
         // 역할 업데이트
         member.updatePermission(dto.getPermission());
@@ -105,7 +105,7 @@ public class TeamMemberService {
 
         // 대상 유저 방출
         TeamMember memberToKick = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. teamId: " + teamId + ", memberId: " + memberId));
         teamMemberRepository.delete(memberToKick);
     }
 
@@ -115,7 +115,7 @@ public class TeamMemberService {
 
         // 탈퇴할 멤버 정보 가져오기
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(userId, teamId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. userId: " + userId + ", teamId: " + teamId));
 
         // ADMIN은 무조건 한 명은 있도록 마지막 남은 ADMIN은 탈퇴 불가능
         if (member.getPermission().equals(Permission.ADMIN)) {
