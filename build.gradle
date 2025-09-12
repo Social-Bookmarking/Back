@@ -42,7 +42,6 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// OpenGraph
-	implementation 'net.sourceforge.htmlcleaner:htmlcleaner:2.29'
 	implementation 'org.seleniumhq.selenium:selenium-java:4.35.0'
 	implementation 'org.jsoup:jsoup:1.17.2'
 

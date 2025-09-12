@@ -17,7 +17,7 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     Boolean existsByNameAndTeam_Id(String name, Long teamId);
 
     // 아무도 사용하지 않는 Tag 삭제
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Tag t WHERE t.bookmarkTags IS EMPTY")
     void deleteUnusedTags();
 }

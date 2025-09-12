@@ -82,12 +82,18 @@ public class CategoryService {
 
         // 카테고리 정보 가져오기
         Category category = getCategoryById(categoryId);
+        Long teamId = category.getTeam().getId();
 
         // 그룹 상태 검증
-        teamService.validateGroupIsActive(category.getTeam().getId());
+        teamService.validateGroupIsActive(teamId);
 
         // 요청자가 권한이 있는지 검사
-        teamMemberService.validateEditor(userId, category.getTeam().getId());
+        teamMemberService.validateAdmin(userId, teamId);
+
+        // 동일한 이름의 카테고리가 있는지 확인
+        if(categoryRepository.existsByNameAndTeam_Id(request.getName(), teamId)) {
+            throw new IllegalStateException("이미 존재하는 카테고리 이름입니다.");
+        }
 
         // 카테고리 업데이트
         category.update(request);
@@ -105,14 +111,15 @@ public class CategoryService {
         Long teamId = category.getTeam().getId();
 
         // 그룹 상태 검증
-        teamService.validateGroupIsActive(category.getTeam().getId());
+        teamService.validateGroupIsActive(teamId);
 
         // 요청자가 권한이 있는지 검사
-        teamMemberService.validateEditor(userId, category.getTeam().getId());
+        teamMemberService.validateEditor(userId, teamId);
 
         // 해당 카테고리에 속해있던 북마크들을 '미분류' 상태로 분류
         bookmarkRepository.bulkSetCategoryToNull(categoryId);
 
+        // 카테고리 삭제
         categoryRepository.delete(category);
 
         return getCategoriesByTeam(teamId);
