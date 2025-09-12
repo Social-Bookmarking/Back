@@ -214,12 +214,8 @@ public class BookmarkService {
         // 요청한 사용자가 작성자인지 확인
         boolean isCreator = bookmark.getUser().getId().equals(userId);
 
-        // 요청한 사용자가 그룹의 ADMIN인지 확인
-        Permission userPermission = teamMemberService.getUserPermissionInTeam(userId, bookmark.getTeam().getId());
-        boolean isAdmin = userPermission == Permission.ADMIN;
-
         // 작성자도, ADMIN도 아니면 예외 발생
-        if (!isCreator && !isAdmin) {
+        if (!isCreator && !teamMemberService.validateAdmin(userId, bookmark.getTeam().getId())) {
             throw new AuthorizationDeniedException("북마크를 삭제할 권한이 없습니다.");
         }
 

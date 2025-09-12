@@ -7,6 +7,7 @@ import com.sonkim.bookmarking.domain.comment.dto.CommentDto;
 import com.sonkim.bookmarking.domain.comment.dto.CommentReplyCountDto;
 import com.sonkim.bookmarking.domain.comment.entity.Comment;
 import com.sonkim.bookmarking.domain.comment.repository.CommentRepository;
+import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +33,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserService userService;
     private final BookmarkService bookmarkService;
+    private final TeamMemberService teamMemberService;
 
     // 댓글 등록
     @Transactional
@@ -121,8 +123,13 @@ public class CommentService {
         Comment comment = commentRepository.findCommentWithChildrenById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("댓글을 찾을 수 없습니다."));
 
-        // 댓글 작성자 본인만 삭제 가능
-        if (!comment.getUser().getId().equals(userId)) {
+        Long teamId = comment.getBookmark().getTeam().getId();
+
+        // 작성자인지 확인
+        boolean isCreator = comment.getUser().getId().equals(userId);
+
+        // 댓글 작성자 본인과 관리자만 삭제 가능
+        if (!isCreator && teamMemberService.validateAdmin(userId, teamId)) {
             throw new AuthorizationDeniedException("댓글을 삭제할 권한이 없습니다.");
         }
 

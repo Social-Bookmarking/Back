@@ -72,8 +72,8 @@ public class TagService {
         tagRepository.findById(tagId)
                 .orElseThrow(() -> new EntityNotFoundException("태그를 찾을 수 없습니다. tagId: " + tagId));
 
-        // 요청자가 ADMIN 권한인지 검증
-        teamMemberService.validateAdmin(userId, teamId);
+        // EDITOR 권한 검사
+        teamMemberService.validateEditor(userId, teamId);
 
         // 태그 삭제
         tagRepository.deleteById(tagId);

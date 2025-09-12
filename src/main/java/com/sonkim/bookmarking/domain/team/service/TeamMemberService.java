@@ -42,11 +42,13 @@ public class TeamMemberService {
     }
 
     @Transactional(readOnly = true)
-    public void validateAdmin(Long userId, Long teamId) {
+    public boolean validateAdmin(Long userId, Long teamId) {
         Permission permission = getUserPermissionInTeam(userId, teamId);
         if (!permission.equals(Permission.ADMIN)) {
             throw new AuthorizationDeniedException("해당 명령을 수행할 권한이 없습니다.");
         }
+
+        return true;
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +84,11 @@ public class TeamMemberService {
 
         // 요청자가 ADMIN 권한인지 검증
         validateAdmin(userId, teamId);
+
+        // 자기 자신의 권한은 변경 불가
+        if(userId.equals(memberId)) {
+            throw new IllegalArgumentException("자기 자신의 권한은 변경할 수 없습니다.");
+        }
 
         // 역할을 변경할 유저 정보 가져오기
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
