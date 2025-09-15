@@ -64,6 +64,7 @@ public class CategoryService {
 
         // '전체' 카테고리 생성하여 추가
         CategoryDto.CategoryResponseDto allCategories = CategoryDto.CategoryResponseDto.builder()
+                .id(-1L)
                 .name("전체")
                 .bookmarkCount(totalBookmarkCount)
                 .build();

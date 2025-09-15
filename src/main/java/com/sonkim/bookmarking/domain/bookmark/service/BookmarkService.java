@@ -220,6 +220,9 @@ public class BookmarkService {
             throw new AuthorizationDeniedException("북마크를 삭제할 권한이 없습니다.");
         }
 
+        // S3 이미지 삭제
+        s3Service.deleteFile("bookmarks/", bookmark.getImageKey());
+
         bookmarkRepository.delete(bookmark);
     }
 
