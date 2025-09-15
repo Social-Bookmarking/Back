@@ -28,6 +28,7 @@ public class CacheConfig {
         // 캐시 종류 별 유효시간 설정
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
         configs.put("ogData", defaultConfig.entryTtl(Duration.ofHours(12)));        // OG 데이터는 12시간
+        configs.put("imageUrlToKey", defaultConfig.entryTtl(Duration.ofHours(12))); // 이미지 URL도 12시간
 
         return RedisCacheManager.RedisCacheManagerBuilder.fromConnectionFactory(cf)
                 .cacheDefaults(defaultConfig)
