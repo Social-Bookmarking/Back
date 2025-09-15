@@ -65,8 +65,8 @@ public class AuthController {
     @Operation(summary = "로그아웃", description = "서버에 저장된 Refresh Token을 삭제하여 현재 세션을 무효화합니다.")
     @ApiResponse(responseCode = "200", description = "로그아웃 성공")
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        return authService.logout(request, response);
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        return authService.logout(request);
     }
 
     @Profile("local, dev")

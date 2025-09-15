@@ -2,7 +2,7 @@ package com.sonkim.bookmarking.domain.bookmark.service;
 
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
-import com.sonkim.bookmarking.common.service.ImageProcessingService;
+import com.sonkim.bookmarking.common.service.BookmarkCreatedEvent;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.LikeCountDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
@@ -24,6 +24,7 @@ import com.sonkim.bookmarking.domain.team.service.TeamService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -48,8 +49,8 @@ public class BookmarkService {
     private final TeamService teamService;
     private final TeamMemberService teamMemberService;
     private final UserService userService;
-    private final ImageProcessingService imageProcessingService;
     private final S3Service s3Service;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 북마크 등록
     @Transactional
@@ -102,11 +103,6 @@ public class BookmarkService {
 
         bookmarkRepository.save(bookmark);
 
-        // 비동기 작업 호출
-        if (originalImageUrl != null) {
-            imageProcessingService.downloadAndUploadToS3(bookmark.getId(), originalImageUrl);
-        }
-
         List<Long> tagIds = request.getTagIds();
         if (tagIds != null && !tagIds.isEmpty()) {
             // ID 리스트로 Tag 엔티티들 조회
@@ -120,6 +116,11 @@ public class BookmarkService {
                         .build();
                 bookmarkTagRepository.save(bookmarkTag);
             }
+        }
+
+        // 비동기 작업 호출
+        if (originalImageUrl != null) {
+            eventPublisher.publishEvent(new BookmarkCreatedEvent(bookmark.getId(), originalImageUrl));
         }
 
         return bookmark;

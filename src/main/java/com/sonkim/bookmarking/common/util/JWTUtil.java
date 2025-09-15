@@ -9,9 +9,6 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Date;
 
 @Component
@@ -20,7 +17,6 @@ public class JWTUtil {
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
-    private final long testTokenExpiration = 86400000;
 
     // application.properties에 저장된 Secret Key를 가져와 설정
     public JWTUtil(@Value("${spring.jwt.secret}") String secret,
@@ -54,18 +50,15 @@ public class JWTUtil {
                 .signWith(secretKey)
                 .compact();
 
-        Instant expiryInstant = Instant.ofEpochMilli(expiresAt);
-
-        LocalDateTime expiryLocalDateTime = LocalDateTime.ofInstant(expiryInstant, ZoneId.of("Asia/Seoul"));
-
         return TokenDto.builder()
                 .token(token)
-                .expiresAt(expiryLocalDateTime)
+                .expiresAt(expirationMs)
                 .build();
     }
 
     // 테스트용 Access Tocket 메서드 생성
     public TokenDto createTestToken(Long userId, String username) {
+        long testTokenExpiration = 86400000;
         return createToken("access", userId, username, testTokenExpiration);
     }
 

@@ -7,7 +7,6 @@ import com.sonkim.bookmarking.domain.token.dto.TokenDto;
 import com.sonkim.bookmarking.domain.token.service.TokenService;
 import com.sonkim.bookmarking.common.util.JWTUtil;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -58,7 +57,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     // 인증 성공 시 JWT 토큰 발급
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
 
         // 인증된 사용자 정보 가져오기
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
@@ -70,10 +69,10 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         TokenDto refreshToken = jwtUtil.createRefreshToken(userId, username);
 
         // 중복 로그인을 방지하기 위해 기존 토큰 삭제
-        tokenService.deleteTokenByUserId(userId);
+        tokenService.deleteRefreshToken(userId);
 
         // 새로운 Refresh Token 저장
-        tokenService.saveToken(userId, refreshToken);
+        tokenService.saveRefreshToken(userId, refreshToken);
 
         // Refresh Token은 HttpOnly 쿠키에 저장
         response.addCookie(createHttpOnlyCookie(refreshToken.getToken()));
@@ -99,7 +98,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
     // 인증 실패 시 오류 메시지 전송
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
 
         // HTTP 상태 코드 401 설정
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

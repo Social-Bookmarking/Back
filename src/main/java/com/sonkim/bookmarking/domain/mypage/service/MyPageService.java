@@ -87,7 +87,7 @@ public class MyPageService {
         user.updatePassword(passwordEncoder.encode(passwordDto.getNewPassword()));
 
         // refresh token 삭제
-        tokenService.deleteTokenByUserId(userId);
+        tokenService.deleteRefreshToken(userId);
     }
 
     // 사용자가 작성한 북마크 조회
@@ -115,7 +115,7 @@ public class MyPageService {
         user.withdraw();
 
         // RefreshToken 삭제하여 세션 무효화
-        tokenService.deleteTokenByUserId(userId);
+        tokenService.deleteRefreshToken(userId);
 
         // 마지막 관리자인 그룹이 있는 경우 탈퇴가 불가능하도록 로직 추가 필요
     }

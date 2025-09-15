@@ -7,14 +7,12 @@ import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
 import com.sonkim.bookmarking.domain.team.service.TeamService;
 import com.sonkim.bookmarking.domain.token.dto.TokenDto;
-import com.sonkim.bookmarking.domain.token.entity.Token;
 import com.sonkim.bookmarking.auth.dto.RegisterRequestDto;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.repository.UserRepository;
 import com.sonkim.bookmarking.domain.profile.entity.Profile;
 import com.sonkim.bookmarking.domain.profile.service.ProfileService;
 import com.sonkim.bookmarking.domain.token.service.TokenService;
-import com.sonkim.bookmarking.common.util.CryptoUtil;
 import com.sonkim.bookmarking.common.util.JWTUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
@@ -110,15 +108,18 @@ public class AuthService {
         // DB에 저장된 토큰과 비교
         Long userId = jwtUtil.getUserId(refreshToken);
         String username = jwtUtil.getUsernameFromJWT(refreshToken);
-        Token storedToken = tokenService.findByUserId(userId)
-                .orElseThrow(() -> new EntityNotFoundException("DB에서 Refresh Token을 찾을 수 없습니다."));
+        String storedToken = tokenService.getRefreshToken(userId);
+
+        if (storedToken == null) {
+            throw new EntityNotFoundException("서버에 저장된 Refrehs Token이 없거나 만료되었습니다. 다시 로그인해주세요.");
+        }
 
         log.info("userId: {} 토큰 재발급 요청", userId);
 
         // 일치하지 않는 경우 탈취된 토큰으로 간주하고 DB에서 토큰을 삭제하여 강제 로그아웃 처리
-        if (!storedToken.getRefreshToken().equals(CryptoUtil.hash(refreshToken))) {
-            tokenService.deleteTokenByRefreshToken(storedToken.getRefreshToken());
-            return new ResponseEntity<>("DB와 토큰이 일치하지 않습니다. 재발급 필요.", HttpStatus.FORBIDDEN);
+        if (!storedToken.equals(refreshToken)) {
+            tokenService.deleteRefreshToken(userId);
+            return new ResponseEntity<>("Refresh Token이 일치하지 않습니다. 재발급 필요.", HttpStatus.FORBIDDEN);
         }
 
         // Access Token과 Refresh Token 재발급(Rotation)
@@ -126,7 +127,7 @@ public class AuthService {
         TokenDto refreshTokenDto = jwtUtil.createRefreshToken(userId, username);
 
         // DB에 저장된 refreshToken 업데이트
-        storedToken.updateToken(CryptoUtil.hash(refreshTokenDto.getToken()), refreshTokenDto.getExpiresAt());
+        tokenService.saveRefreshToken(userId, refreshTokenDto);
 
         // 응답 처리
         response.addCookie(createHttpOnlyCookie(refreshTokenDto.getToken()));
@@ -135,7 +136,7 @@ public class AuthService {
 
     // 로그아웃 처리
     @Transactional
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> logout(HttpServletRequest request) {
 
         // Refresh Token 조회
         String refreshToken = extractRefreshToken(request);
@@ -147,7 +148,7 @@ public class AuthService {
         log.info("userId: {} 로그아웃 요청", userId);
 
         // DB에서 Refresh Token 삭제
-        tokenService.deleteTokenByRefreshToken(refreshToken);
+        tokenService.deleteRefreshToken(userId);
 
         // 클라이언트 측의 Refresh Token 즉시 만료
         ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
