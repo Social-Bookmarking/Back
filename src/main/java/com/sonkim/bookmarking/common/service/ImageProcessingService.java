@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.common.service;
 
+import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.io.InputStream;
+import java.net.URL;
 import java.util.Optional;
 
 @Slf4j
@@ -18,7 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ImageProcessingService {
     private final BookmarkRepository bookmarkRepository;
-    private final ImageCacheService imageCacheService;
+    private final S3Service s3Service;
 
     @Async("imageUploadExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -35,7 +38,19 @@ public class ImageProcessingService {
 
         try {
             // S3에 업로드 후 파일 키 수령
-            String fileKey = imageCacheService.getFileKeyFromImageUrl(imageUrl);
+            String fileKey;
+            try (InputStream in = new URL(imageUrl).openStream()) {
+                // URL에서 이미지를 byte[]로 읽어옴
+                byte[] imageBytes = in.readAllBytes();
+
+                // 파일 이름 추출
+                String fileNameWithQuery = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+                int queryIndex = fileNameWithQuery.indexOf('?');
+                String originalFileName = (queryIndex != -1) ? fileNameWithQuery.substring(0, queryIndex) : fileNameWithQuery;
+
+                // S3에 업로드하고 fileKey 반환
+                fileKey = s3Service.uploadImageBytes(imageBytes, originalFileName, "bookmarks/");
+            }
 
             // 해당 북마크 이미지 url 수정
             Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(bookmarkId);
