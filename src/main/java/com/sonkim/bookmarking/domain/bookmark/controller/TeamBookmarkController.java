@@ -56,61 +56,28 @@ public class TeamBookmarkController {
     public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
                                                  @RequestParam(required = false) String keyword,
                                                  @RequestParam(required = false) Long tagId,
-                                                 @AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                 @RequestParam(required = false) Long categoryId,
                                                  @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
-        PageResponseDto<BookmarkResponseDto> bookmarkList;
 
-        if (tagId != null) {
-            bookmarkList = bookmarkService.getBookmarksByTagInGroup(userDetails.getId(), groupId, tagId, pageable);
-        } else if (keyword != null && !keyword.isBlank()) {
-            bookmarkList = bookmarkService.searchBookmarksByTeamId(userDetails.getId(), groupId, keyword, pageable);
-        } else {
-            bookmarkList = bookmarkService.getBookmarksByTeamId(userDetails.getId(), groupId, pageable);
-        }
+        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.getBookmarks(groupId, categoryId, tagId, keyword, pageable);
 
-        return ResponseEntity.ok(bookmarkList);
+        return ResponseEntity.ok(bookmarks);
     }
 
-    @Operation(summary = "특정 카테고리 내 북마크 조회 (페이징)",
-            description = "특정 그룹의 특정 카테고리에 속한 북마크를 페이징하여 조회합니다.",
-            parameters = {
-                    @Parameter(name = "page", description = "표시할 페이지(1부터 시작)")
-            })
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공"),
-            @ApiResponse(responseCode = "404", description = "그룹 또는 카테고리를 찾을 수 없음")
-    })
-    @GetMapping("/{groupId}/categories/{categoryId}/bookmarks")
-    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksOfCategory(@PathVariable("groupId") Long groupId,
-                                                    @PathVariable("categoryId") Long categoryId,
-                                                    @RequestParam(required = false) String keyword,
-                                                    @RequestParam(required = false) Long tagId,
-                                                    @AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                    @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
-        PageResponseDto<BookmarkResponseDto> bookmarkList;
-
-        if (tagId != null) {
-            bookmarkList = bookmarkService.getBookmarksByTagInCategory(userDetails.getId(), groupId, categoryId, tagId, pageable);
-        }else if (keyword != null && !keyword.isBlank()) {
-            bookmarkList = bookmarkService.searchBookmarksByTeamIdAndCategoryId(userDetails.getId(), groupId, categoryId, keyword, pageable);
-        } else {
-            bookmarkList = bookmarkService.getBookmarksByTeamIdAndCategoryId(userDetails.getId(), groupId, categoryId, pageable);
-        }
-
-        return ResponseEntity.ok(bookmarkList);
-    }
-
-    @Operation(summary = "그룹 내 모든 북마크 조회 (페이징, 위도/경도 포함한 북마크만)",
-            description = "특정 그룹에 속한 모든 북마크 중 위도와 경도 정보를 가진 북마크를 페이징하여 조회합니다.",
+    @Operation(summary = "지도 표시용 북마크 목록 조회 (필터링, 페이징)",
+            description = "특정 그룹에서 위치 정보가 있는 북마크를 조건(카테고리, 키워드, 태그)에 따라 필터링하여 조회합니다.",
             parameters = {
                     @Parameter(name = "page", description = "표시할 페이지 (1부터 시작)")
             })
     @GetMapping("/{groupId}/bookmarks/map")
     public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksForMap(
             @Parameter(description = "북마크를 조회할 그룹 ID") @PathVariable("groupId") Long groupId,
-            @Parameter(hidden = true) @PageableDefault(size = 20) Pageable pageable
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) String keyword,
+            @Parameter(hidden = true) @PageableDefault(size = 10) Pageable pageable
     ) {
-        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.getBookmarksForMap(groupId, pageable);
+        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.getBookmarksForMap(groupId, categoryId, tagId, keyword, pageable);
         return ResponseEntity.ok(bookmarks);
     }
 }
