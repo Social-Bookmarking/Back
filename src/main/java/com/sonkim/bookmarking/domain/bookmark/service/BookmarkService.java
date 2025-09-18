@@ -226,52 +226,34 @@ public class BookmarkService {
         bookmarkRepository.delete(bookmark);
     }
 
-    // 그룹 내 모든 북마크 조회
+    // 북마크 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarksByTeamId(Long userId, Long teamId, Pageable pageable) {
-        // 북마크 페이징 조회
-        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_Id(teamId, pageable);
-        return enrichBookmarksWithDetails(bookmarks, userId);
-    }
+    public PageResponseDto<BookmarkResponseDto> getBookmarks(Long teamId, Long categoryId, Long tagId, String keyword, Pageable pageable) {
+        Page<Bookmark> bookmarks;
 
-    // 특정 카테고리에 속한 북마크 조회
-    @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarksByTeamIdAndCategoryId(Long userId, Long teamId, Long categoryId, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_Id(teamId, categoryId, pageable);
-        return enrichBookmarksWithDetails(bookmarks, userId);
-    }
+        if (tagId != null) {
+            bookmarks = bookmarkRepository.findAllByTeam_IdAndTag_Id(teamId, categoryId, tagId, pageable);
+        } else if (keyword != null && !keyword.isBlank()) {
+            bookmarks = bookmarkRepository.findAllByTeam_IdAndKeyword(teamId, categoryId, keyword, pageable);
+        } else {
+            bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_Id(teamId, categoryId, pageable);
+        }
 
-    // 북마크 검색
-    @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> searchBookmarksByTeamId(Long userId, Long teamId, String keyword, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndKeyword(teamId, keyword, pageable);
-        return enrichBookmarksWithDetails(bookmarks, userId);
-    }
-
-    // 북마크 검색(특정 카테고리 내)
-    @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> searchBookmarksByTeamIdAndCategoryId(Long userId, Long teamId, Long categoryId, String keyword, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_IdAndKeyword(teamId, categoryId, keyword, pageable);
-        return enrichBookmarksWithDetails(bookmarks, userId);
-    }
-
-    // 북마크 태그 검색
-    @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarksByTagInGroup(Long userId, Long teamId, Long tagId, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findByTeam_IdAndTag_Id(teamId, tagId, pageable);
-        return enrichBookmarksWithDetails(bookmarks, userId);
-    }
-
-    // 북마크 태그 검색(특정 카테고리 내)
-    @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarksByTagInCategory(Long userId, Long teamId, Long categoryId, Long tagId, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findByCategory_IdAndTag_Id(teamId, categoryId, tagId, pageable);
-        return enrichBookmarksWithDetails(bookmarks, userId);
+        return enrichBookmarksWithDetails(bookmarks, teamId);
     }
 
     @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarksForMap(Long teamId, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findByTeam_IdAndLatitudeIsNotNullAndLongitudeIsNotNull(teamId, pageable);
+    public PageResponseDto<BookmarkResponseDto> getBookmarksForMap(Long teamId, Long categoryId, Long tagId, String keyword, Pageable pageable) {
+        Page<Bookmark> bookmarks;
+
+        if (tagId != null) {
+            bookmarks = bookmarkRepository.findForMapByTag(teamId, categoryId, tagId, pageable);
+        } else if (keyword != null && !keyword.isEmpty()) {
+            bookmarks = bookmarkRepository.findForMapByKeyword(teamId, categoryId, keyword, pageable);
+        } else {
+            bookmarks = bookmarkRepository.findForMap(teamId, categoryId, pageable);
+        }
+
         return enrichBookmarksWithDetails(bookmarks, teamId);
     }
 
