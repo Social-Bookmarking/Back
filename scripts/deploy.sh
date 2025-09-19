@@ -17,25 +17,15 @@ JAR_PATH=$REPOSITORY/build/libs/$JAR_NAME
 echo "> $JAR_PATH 에 실행 권한 추가"
 chmod +x $JAR_PATH
 
-PORT=8080
-CURRENT_PID=$(lsof -t -i:$PORT)
+echo "> 현재 구동 중인 애플리케이션 PID 확인"
+CURRENT_PID=$(pgrep -f ${PROJECT_NAME}.*.jar)
 
-
-if [ -z "$CURRENT_PID" ]
-then
+if [ -z "$CURRENT_PID" ]; then
   echo "> 현재 구동중인 애플리케이션이 없으므로 종료하지 않습니다."
 else
-  echo "> 정상 종료 시도: kill -15 $CURRENT_PID"
+  echo "> 구동 중인 애플리케이션 종료 (PID: $CURRENT_PID)"
   sudo kill -15 $CURRENT_PID
-  sleep 3
-
-  if kill -0 $CURRENT_PID > /dev/null 2>&1
-  then
-    echo "> 프로세스가 종료되지 않아 강제 종료합니다: kill -9 $CURRENT_PID"
-    sudo kill -9 $CURRENT_PID
-  else
-    echo "> 정상적으로 종료되었습니다."
-  fi
+  sleep 5
 fi
 
 echo "> $JAR_PATH 배포"
