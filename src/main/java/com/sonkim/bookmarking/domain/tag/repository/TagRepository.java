@@ -20,4 +20,6 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Tag t WHERE t.bookmarkTags IS EMPTY")
     void deleteUnusedTags();
+
+    List<Tag> findByTeam_IdAndNameIn(Long teamId, List<String> names);
 }

@@ -10,7 +10,7 @@ public class BookmarkRequestDto {
     private String url;
     private String title;
     private String description;
-    private List<Long> tagIds;
+    private List<String> tagNames;
     private Double latitude;
     private Double longitude;
     private String imageKey;            // S3에 직접 업로드한 경우의 파일 키
