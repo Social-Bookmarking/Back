@@ -13,7 +13,8 @@ import lombok.*;
 public class BookmarkTag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "bookmark_tag_seq_generator", sequenceName = "bookmark_tag_seq", allocationSize = 1)
     private Long id;
 
     // 북마크 ID

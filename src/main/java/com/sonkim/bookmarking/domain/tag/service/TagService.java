@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -83,5 +84,37 @@ public class TagService {
     @Transactional
     public void deleteUnusedTags() {
         tagRepository.deleteUnusedTags();
+    }
+
+    // 태그 이름 리스트를 받아 존재하지 않는 태그는 새로 생성
+    public List<Tag> findOrCreateTags(Long userId, Long teamId, List<String> tagNames) {
+        // EDITOR 권한 검사
+        teamMemberService.validateEditor(userId, teamId);
+        Team team = teamService.getTeamById(teamId);
+
+        // 이미 존재하는 태그 검사
+        List<Tag> existingTags = tagRepository.findByTeam_IdAndNameIn(teamId, tagNames);
+        List<String> existingTagNames = existingTags.stream().map(Tag::getName).toList();
+
+        // DB에 존재하지 않는 태그들 필터링
+        List<String> newTagNames = tagNames.stream()
+                .filter(name -> !existingTagNames.contains(name))
+                .toList();
+
+        // 새로운 태그들을 생성하고 저장
+        List<Tag> newTags = new ArrayList<>();
+        if (!newTagNames.isEmpty()) {
+            for (String newTagName : newTagNames) {
+                newTags.add(Tag.builder().team(team).name(newTagName).build());
+            }
+
+            tagRepository.saveAll(newTags);
+        }
+
+        // 이미 존재하는 태그 + 새로 만든 태그 종합
+        List<Tag> resultTags = new ArrayList<>(existingTags);
+        resultTags.addAll(newTags);
+
+        return resultTags;
     }
 }

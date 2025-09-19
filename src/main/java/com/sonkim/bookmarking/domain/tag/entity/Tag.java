@@ -16,7 +16,8 @@ import java.util.List;
 public class Tag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "tag_seq_generator", sequenceName = "tag_seq", allocationSize = 1)
     private Long id;
 
     @Column(nullable = false, length = 20)

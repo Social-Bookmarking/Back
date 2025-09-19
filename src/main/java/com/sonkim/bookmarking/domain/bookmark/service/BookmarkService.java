@@ -10,7 +10,7 @@ import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkTagRepository;
 import com.sonkim.bookmarking.domain.category.entity.Category;
 import com.sonkim.bookmarking.domain.tag.entity.Tag;
-import com.sonkim.bookmarking.domain.tag.repository.TagRepository;
+import com.sonkim.bookmarking.domain.tag.service.TagService;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
@@ -31,6 +31,7 @@ import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,6 @@ public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkLikeRepository bookmarkLikeRepository;
-    private final TagRepository tagRepository;
     private final BookmarkTagRepository bookmarkTagRepository;
     private final CategoryService categoryService;
     private final TeamService teamService;
@@ -51,6 +51,7 @@ public class BookmarkService {
     private final UserService userService;
     private final S3Service s3Service;
     private final ApplicationEventPublisher eventPublisher;
+    private final TagService tagService;
 
     // 북마크 등록
     @Transactional
@@ -103,19 +104,17 @@ public class BookmarkService {
 
         bookmarkRepository.save(bookmark);
 
-        List<Long> tagIds = request.getTagIds();
-        if (tagIds != null && !tagIds.isEmpty()) {
-            // ID 리스트로 Tag 엔티티들 조회
-            List<Tag> tags = tagRepository.findAllById(tagIds);
+        List<String> tagNames = request.getTagNames();
+        if (tagNames != null && !tagNames.isEmpty()) {
+            // TagService를 통해 Tag 엔티티들 가져오기
+            List<Tag> tags = tagService.findOrCreateTags(userId, teamId, tagNames);
 
-            // 각 Tag에 대해 BookmarkTag 엔티티 생성
+            // BookmarkTag 연결 엔티티 생성
+            List<BookmarkTag> newBookmarkTags = new ArrayList<>();
             for (Tag tag : tags) {
-                BookmarkTag bookmarkTag = BookmarkTag.builder()
-                        .bookmark(bookmark)
-                        .tag(tag)
-                        .build();
-                bookmarkTagRepository.save(bookmarkTag);
+                newBookmarkTags.add(BookmarkTag.builder().bookmark(bookmark).tag(tag).build());
             }
+            bookmarkTagRepository.saveAll(newBookmarkTags);
         }
 
         // 비동기 작업 호출
