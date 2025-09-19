@@ -36,6 +36,11 @@ public class ImageProcessingService {
             return;
         }
 
+        if (imageUrl.startsWith("http://")) {
+            imageUrl = imageUrl.replaceFirst("http://", "https://");
+            log.debug("HTTP URL을 HTTPS로 변환: {}", imageUrl);
+        }
+
         try {
             // S3에 업로드 후 파일 키 수령
             String fileKey;
