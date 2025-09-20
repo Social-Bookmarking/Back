@@ -8,7 +8,7 @@ import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.mypage.dto.MyProfileDto;
 import com.sonkim.bookmarking.domain.mypage.dto.PasswordDto;
-import com.sonkim.bookmarking.domain.token.service.TokenService;
+import com.sonkim.bookmarking.auth.token.service.TokenService;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.repository.UserRepository;
 import com.sonkim.bookmarking.domain.user.service.UserService;

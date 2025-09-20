@@ -1,4 +1,4 @@
-package com.sonkim.bookmarking.domain.token.dto;
+package com.sonkim.bookmarking.auth.token.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
