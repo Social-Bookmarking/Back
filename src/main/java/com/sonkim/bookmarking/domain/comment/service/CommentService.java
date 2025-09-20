@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.domain.comment.service;
 
+import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
@@ -36,6 +37,7 @@ public class CommentService {
     private final TeamMemberService teamMemberService;
 
     // 댓글 등록
+    @Idempotent
     @Transactional
     public void createComment(Long userId, Long bookmarkId, CommentDto.CreateRequestDto request) {
         log.info("userId: {}, bookmarkId: {} 댓글 등록 요청", userId, bookmarkId);

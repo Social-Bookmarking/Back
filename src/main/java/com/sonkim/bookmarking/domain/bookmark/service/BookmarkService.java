@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
+import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.common.service.BookmarkCreatedEvent;
@@ -54,6 +55,7 @@ public class BookmarkService {
     private final TagService tagService;
 
     // 북마크 등록
+    @Idempotent
     @Transactional
     public Bookmark createBookmark(Long userId, Long teamId, BookmarkRequestDto request) {
         // 그룹 상태 검증

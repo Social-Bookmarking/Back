@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.common.security;
 
+import com.sonkim.bookmarking.common.aop.CachingRequestFilter;
 import com.sonkim.bookmarking.domain.token.service.TokenService;
 import com.sonkim.bookmarking.common.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ public class SecurityConfig {
     private final JWTUtil jwtUtil;
     private final TokenService tokenService;
     private final UserAuthenticationEntryPoint userAuthenticationEntryPoint;
+    private final CachingRequestFilter cachingRequestFilter;
+    private final JwtVerificationFilter jwtVerificationFilter;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -94,10 +97,12 @@ public class SecurityConfig {
                         .authenticationEntryPoint(userAuthenticationEntryPoint));
 
         http
-                // 로그인 필터 추가
-                .addFilterAt(new LoginFilter(authenticationManager, jwtUtil, tokenService), UsernamePasswordAuthenticationFilter.class)
+                // 멱등성 키 검증을 위해 캐싱 필터 추가
+                .addFilterBefore(cachingRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 // JWT 검증 필터 추가
-                .addFilterBefore(new JwtVerificationFilter(jwtUtil), LoginFilter.class);
+                .addFilterBefore(jwtVerificationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 로그인 필터 추가
+                .addFilterAt(new LoginFilter(authenticationManager, jwtUtil, tokenService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
