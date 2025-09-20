@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.common.util;
 
-import com.sonkim.bookmarking.domain.token.dto.TokenDto;
+import com.sonkim.bookmarking.auth.token.dto.TokenDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;

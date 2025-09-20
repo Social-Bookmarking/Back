@@ -6,13 +6,13 @@ import com.sonkim.bookmarking.domain.team.entity.TeamMember;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
 import com.sonkim.bookmarking.domain.team.service.TeamService;
-import com.sonkim.bookmarking.domain.token.dto.TokenDto;
+import com.sonkim.bookmarking.auth.token.dto.TokenDto;
 import com.sonkim.bookmarking.auth.dto.RegisterRequestDto;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.repository.UserRepository;
 import com.sonkim.bookmarking.domain.profile.entity.Profile;
 import com.sonkim.bookmarking.domain.profile.service.ProfileService;
-import com.sonkim.bookmarking.domain.token.service.TokenService;
+import com.sonkim.bookmarking.auth.token.service.TokenService;
 import com.sonkim.bookmarking.common.util.JWTUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
@@ -105,7 +105,7 @@ public class AuthService {
             throw new IllegalArgumentException("잘못된 토큰입니다.");
         }
 
-        // DB에 저장된 토큰과 비교
+        // Redis에 저장된 토큰과 비교
         Long userId = jwtUtil.getUserId(refreshToken);
         String username = jwtUtil.getUsernameFromJWT(refreshToken);
         String storedToken = tokenService.getRefreshToken(userId);
@@ -126,7 +126,7 @@ public class AuthService {
         TokenDto accessTokenDto = jwtUtil.createAccessToken(userId, username);
         TokenDto refreshTokenDto = jwtUtil.createRefreshToken(userId, username);
 
-        // DB에 저장된 refreshToken 업데이트
+        // Redis에 저장된 refreshToken 업데이트
         tokenService.saveRefreshToken(userId, refreshTokenDto);
 
         // 응답 처리
@@ -147,7 +147,7 @@ public class AuthService {
         Long userId = jwtUtil.getUserId(refreshToken);
         log.info("userId: {} 로그아웃 요청", userId);
 
-        // DB에서 Refresh Token 삭제
+        // Redis에서 Refresh Token 삭제
         tokenService.deleteRefreshToken(userId);
 
         // 클라이언트 측의 Refresh Token 즉시 만료

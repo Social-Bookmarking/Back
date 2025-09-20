@@ -1,7 +1,7 @@
 package com.sonkim.bookmarking.common.security;
 
 import com.sonkim.bookmarking.common.aop.CachingRequestFilter;
-import com.sonkim.bookmarking.domain.token.service.TokenService;
+import com.sonkim.bookmarking.auth.token.service.TokenService;
 import com.sonkim.bookmarking.common.util.JWTUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

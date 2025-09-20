@@ -1,6 +1,6 @@
-package com.sonkim.bookmarking.domain.token.service;
+package com.sonkim.bookmarking.auth.token.service;
 
-import com.sonkim.bookmarking.domain.token.dto.TokenDto;
+import com.sonkim.bookmarking.auth.token.dto.TokenDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
