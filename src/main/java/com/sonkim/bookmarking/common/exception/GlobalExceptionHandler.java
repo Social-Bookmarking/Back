@@ -77,6 +77,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    // 같은 멱등성 키에 바디 데이터가 다른 경우 예외 처리
+    @ExceptionHandler(UnprocessableEntityException.class)
+    public ResponseEntity<?> handleUnprocessableEntityException(UnprocessableEntityException e) {
+        log.warn("같은 멱등성 키, 다른 바디 데이터 요청 발생ㅣ {}", e.getMessage());
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage());
+    }
+
     // 범용 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
