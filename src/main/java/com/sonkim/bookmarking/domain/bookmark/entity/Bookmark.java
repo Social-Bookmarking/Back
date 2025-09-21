@@ -87,8 +87,18 @@ public class Bookmark {
     public void update(BookmarkRequestDto dto) {
         if(dto.getTitle() != null) this.title = dto.getTitle();
         if(dto.getDescription() != null) this.description = dto.getDescription();
-        if(dto.getLatitude() != null) this.latitude = dto.getLatitude();
-        if(dto.getLongitude() != null) this.longitude = dto.getLongitude();
+        if(dto.getLatitude() != null) {
+            if(dto.getLatitude() != -1)
+                this.latitude = dto.getLatitude();
+            else
+                this.latitude = null;
+        }
+        if(dto.getLongitude() != null) {
+            if (dto.getLongitude() != -1)
+                this.longitude = dto.getLongitude();
+            else
+                this.longitude = null;
+        }
         this.updatedAt = LocalDateTime.now();
     }
 

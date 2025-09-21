@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.team.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
+import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.domain.team.dto.TeamDto;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.service.QrCodeService;
@@ -31,6 +32,7 @@ public class TeamController {
     @Operation(summary = "새로운 그룹 생성", description = "사용자가 새로운 그룹을 생성합니다. 생성자는 자동으로 그룹의 ADMIN이 됩니다.")
     @ApiResponse(responseCode = "201", description = "그룹 생성 성공")
     @PostMapping
+    @Idempotent
     public ResponseEntity<TeamDto.CreateResponseDto> createTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                         @RequestBody TeamDto.TeamRequestDto createDto) {
         Team newTeam = teamService.createTeam(userDetails.getId(), createDto);

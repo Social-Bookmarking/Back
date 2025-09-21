@@ -1,6 +1,5 @@
 package com.sonkim.bookmarking.domain.team.service;
 
-import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.domain.team.dto.TeamDto;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.entity.TeamMember;
@@ -86,7 +85,6 @@ public class TeamService {
     }
 
     // 새로운 그룹 생성
-    @Idempotent
     @Transactional
     public Team createTeam(Long userId, TeamDto.TeamRequestDto createDto) {
         log.info("userId: {}, teamName: {} 생성 요청", userId, createDto.getName());
