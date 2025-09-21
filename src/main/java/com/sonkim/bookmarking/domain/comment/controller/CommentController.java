@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.comment.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
+import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.domain.comment.dto.CommentDto;
 import com.sonkim.bookmarking.domain.comment.service.CommentService;
@@ -29,6 +30,7 @@ public class CommentController {
     @Operation(summary = "댓글/답글 생성", description = "특정 북마크에 새로운 댓글 또는 답글을 작성합니다.")
     @ApiResponse(responseCode = "201", description = "댓글 생성 성공")
     @PostMapping("/bookmarks/{bookmarkId}/comments")
+    @Idempotent
     public ResponseEntity<Void> createComment(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Parameter(description = "댓글/답글을 작성할 북마크 ID") @PathVariable("bookmarkId") Long bookmarkId,

@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.bookmark.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
+import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
@@ -21,6 +22,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Tag(name = "그룹 북마크 관리", description = "그룹 내 북마크 생성 및 조회 API")
 @Slf4j
 @RequiredArgsConstructor
@@ -37,13 +40,19 @@ public class TeamBookmarkController {
             @ApiResponse(responseCode = "404", description = "그룹 또는 카테고리를 찾을 수 없음")
     })
     @PostMapping("/{groupId}/bookmarks")
-    public ResponseEntity<String> createBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    @Idempotent
+    public ResponseEntity<Map<String, Object>> createBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable Long groupId,
                                             @RequestBody BookmarkRequestDto bookmarkRequestDto) {
         log.info("userId: {}, url: {} 북마크 생성 요청", userDetails.getId(), bookmarkRequestDto.getUrl());
         Bookmark bookmark = bookmarkService.createBookmark(userDetails.getId(), groupId, bookmarkRequestDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("bookmarkId: " + bookmark.getId() + " created");
+        Map<String, Object> response = Map.of(
+                "message", "Bookmark created successfully",
+                "bookmarkId", bookmark.getId()
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @Operation(summary = "그룹 내 모든 북마크 조회 (페이징)",
