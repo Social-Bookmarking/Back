@@ -5,7 +5,6 @@ import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkLike;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
-import com.sonkim.bookmarking.common.exception.DuplicateBookmarkLikeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,19 +23,17 @@ public class BookmarkLikeService {
     @Transactional
     public void createBookmarkLike(Long userId, Long bookmarkId) {
         // 중복 체크
-        if(bookmarkLikeRepository.existsBookmarkLikeByUser_IdAndBookmark_Id(userId, bookmarkId)) {
-            throw new DuplicateBookmarkLikeException();
+        if(!bookmarkLikeRepository.existsBookmarkLikeByUser_IdAndBookmark_Id(userId, bookmarkId)) {
+            User user = userService.getUserById(userId);
+            Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
+
+            BookmarkLike bookmarkLike = BookmarkLike.builder()
+                    .bookmark(bookmark)
+                    .user(user)
+                    .build();
+
+            bookmarkLikeRepository.save(bookmarkLike);
         }
-
-        User user = userService.getUserById(userId);
-        Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
-
-        BookmarkLike bookmarkLike = BookmarkLike.builder()
-                .bookmark(bookmark)
-                .user(user)
-                .build();
-
-        bookmarkLikeRepository.save(bookmarkLike);
     }
 
     // 북마크-좋아요 취소
