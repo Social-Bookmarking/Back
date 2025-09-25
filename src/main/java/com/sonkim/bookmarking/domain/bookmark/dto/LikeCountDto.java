@@ -4,10 +4,10 @@ import lombok.Data;
 
 @Data
 public class LikeCountDto {
-    Long bookmarkId;
-    Long count;
+    private Long bookmarkId;
+    private Long count;
 
-    LikeCountDto(Long bookmarkId, Long count) {
+    public LikeCountDto(Long bookmarkId, Long count) {
         this.bookmarkId = bookmarkId;
         this.count = count;
     }

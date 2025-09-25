@@ -4,6 +4,7 @@ import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.common.service.BookmarkCreatedEvent;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkSearchCond;
 import com.sonkim.bookmarking.domain.bookmark.dto.LikeCountDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
@@ -227,43 +228,28 @@ public class BookmarkService {
 
     // 북마크 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarks(Long teamId, Long categoryId, Long tagId, String keyword, Pageable pageable) {
-        Page<Bookmark> bookmarks;
+    public PageResponseDto<BookmarkResponseDto> searchBookmarks(
+            Long userId, Long teamId, BookmarkSearchCond cond, Pageable pageable
+    ) {
+        // QueryDSL을 사용한 단일 리포지토리 메소드를 통해 검색
+        Page<Bookmark> bookmarks = bookmarkRepository.search(teamId, cond, pageable);
 
-        if (tagId != null) {
-            bookmarks = bookmarkRepository.findAllByTeam_IdAndTag_Id(teamId, categoryId, tagId, pageable);
-        } else if (keyword != null && !keyword.isBlank()) {
-            bookmarks = bookmarkRepository.findAllByTeam_IdAndKeyword(teamId, categoryId, keyword, pageable);
-        } else {
-            bookmarks = bookmarkRepository.findAllByTeam_IdAndCategory_Id(teamId, categoryId, pageable);
-        }
-
-        return enrichBookmarksWithDetails(bookmarks, teamId);
-    }
-
-    @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getBookmarksForMap(Long teamId, Long categoryId, Long tagId, String keyword, Pageable pageable) {
-        Page<Bookmark> bookmarks;
-
-        if (tagId != null) {
-            bookmarks = bookmarkRepository.findForMapByTag(teamId, categoryId, tagId, pageable);
-        } else if (keyword != null && !keyword.isEmpty()) {
-            bookmarks = bookmarkRepository.findForMapByKeyword(teamId, categoryId, keyword, pageable);
-        } else {
-            bookmarks = bookmarkRepository.findForMap(teamId, categoryId, pageable);
-        }
-
-        return enrichBookmarksWithDetails(bookmarks, teamId);
+        return enrichBookmarksWithDetails(bookmarks, userId);
     }
 
     // 추가 정보 채우기
     public PageResponseDto<BookmarkResponseDto> enrichBookmarksWithDetails(Page<Bookmark> bookmarks, Long userId) {
         List<Long> bookmarkIds = bookmarks.getContent().stream().map(Bookmark::getId).toList();
 
+        log.info("bookmarkIds : " + bookmarkIds);
+
         // 좋아요 개수, 좋아요 여부, 태그 정보 전부 다 가져오기
         Map<Long, Long> likesCountMap = bookmarkLikeRepository.findLikesCountForBookmarks(bookmarkIds)
                 .stream().collect(Collectors.toMap(LikeCountDto::getBookmarkId, LikeCountDto::getCount));
         List<Long> likedBookmarkIds = bookmarkLikeRepository.findLikedBookmarkIdsForUser(userId, bookmarkIds);
+
+        log.info("likedBookmarkIds : " + likedBookmarkIds);
+
         List<BookmarkTag> allBookmarkTags = bookmarkTagRepository.findAllByBookmarkIdsWithTags(bookmarkIds);
         Map<Long, List<BookmarkResponseDto.TagInfo>> tagsMap = allBookmarkTags.stream()
                 .collect(Collectors.groupingBy(
