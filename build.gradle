@@ -17,6 +17,9 @@ configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
 	}
+
+	// QueryDSl과 관련된 라이브러리들이 컴파일 시점에만 필요하도록 설정
+	querydsl.extendsFrom compileClasspath
 }
 
 repositories {
@@ -65,6 +68,30 @@ dependencies {
 
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+	// QueryDSL
+	implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.0'
+	annotationProcessor 'io.github.openfeign.querydsl:querydsl-apt:7.0:jakarta'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+}
+
+// Q-Class를 생성할 디렉토리 경로
+def queryDslSrcDir = 'src/main/generated/querydsl/'
+
+// 빌드 시 생성될 소스코드의 출력 디렉토리 설정
+tasks.withType(JavaCompile).configureEach {
+	options.getGeneratedSourceOutputDirectory().set(file(queryDslSrcDir))
+}
+
+// 소스 코드로 인식할 디렉토리 경로에 Q-Class 파일 추가
+sourceSets {
+	main.java.srcDirs += [queryDslSrcDir]
+}
+
+// 클린 작업 수행 시 Q-Class도 삭제하도록 설정
+clean {
+	delete file(queryDslSrcDir)
 }
 
 tasks.named('test') {

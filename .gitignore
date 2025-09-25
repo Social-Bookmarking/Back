@@ -36,3 +36,6 @@ out/
 hs_err_pid*
 replay_pid*
 src/main/resources/application-local.properties
+
+# QueryDSL Auto Generated
+src/main/generated

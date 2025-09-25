@@ -9,11 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
     Optional<User> findByUsername(String username);
     boolean existsByUsername(String username);
-
-    // 사용자 프로필 조회를 위해 프로필 정보까지 한 번에 가져옴
-    @Query("SELECT u FROM User u JOIN FETCH u.profile WHERE u.id = :userId")
-    Optional<User> findByIdWithProfile(@Param("userId") Long userId);
 }
