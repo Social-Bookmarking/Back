@@ -5,6 +5,7 @@ import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkSearchCond;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,15 +63,22 @@ public class TeamBookmarkController {
             })
     @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공")
     @GetMapping("/{groupId}/bookmarks")
-    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksOfGroup(@PathVariable("groupId") Long groupId,
-                                                 @RequestParam(required = false) String keyword,
-                                                 @RequestParam(required = false) Long tagId,
-                                                 @RequestParam(required = false) Long categoryId,
-                                                 @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
+    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksOfGroup(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable("groupId") Long groupId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) Long categoryId,
+            @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
+        // 검색 조건 DTO 생성
+        BookmarkSearchCond cond = BookmarkSearchCond.builder()
+                .keyword(keyword)
+                .tagId(tagId)
+                .categoryId(categoryId)
+                .build();
 
-        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.getBookmarks(groupId, categoryId, tagId, keyword, pageable);
-
-        return ResponseEntity.ok(bookmarks);
+        PageResponseDto<BookmarkResponseDto> bookmarkPage = bookmarkService.searchBookmarks(userDetails.getId(), groupId, cond, pageable);
+        return ResponseEntity.ok(bookmarkPage);
     }
 
     @Operation(summary = "지도 표시용 북마크 목록 조회 (필터링, 페이징)",
@@ -80,13 +88,22 @@ public class TeamBookmarkController {
             })
     @GetMapping("/{groupId}/bookmarks/map")
     public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getBookmarksForMap(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Parameter(description = "북마크를 조회할 그룹 ID") @PathVariable("groupId") Long groupId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String keyword,
             @Parameter(hidden = true) @PageableDefault(size = 10) Pageable pageable
     ) {
-        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.getBookmarksForMap(groupId, categoryId, tagId, keyword, pageable);
+        // 검색 조건 DTO 생성
+        BookmarkSearchCond cond = BookmarkSearchCond.builder()
+                .keyword(keyword)
+                .tagId(tagId)
+                .categoryId(categoryId)
+                .forMap(true)
+                .build();
+
+        PageResponseDto<BookmarkResponseDto> bookmarks = bookmarkService.searchBookmarks(userDetails.getId(), groupId, cond, pageable);
         return ResponseEntity.ok(bookmarks);
     }
 }

@@ -41,12 +41,12 @@ public class IdempotencyCheckAspect {
         // 헤더에서 멱등키 조회
         String idempotencyKey = getIdempotencyKey(request);
 
-        // Redis 조회
-        String storedValueJson = (String) redisTemplate.opsForValue().get(idempotencyKey);
-
         // 요청에서 바디 조회 및 Hash 값으로 변환
         byte[] requestData = getRequestData(request);
         String requestHash = createHash(requestData);
+
+        // Redis 조회
+        String storedValueJson = (String) redisTemplate.opsForValue().get(idempotencyKey);
 
         // 전달된 멱등성 키에 대해 저장된 내용이 존재
         if (storedValueJson != null) {

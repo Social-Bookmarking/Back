@@ -104,8 +104,8 @@ public class BookmarkRepositoryCustomImpl implements BookmarkRepositoryCustom {
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
-    private BooleanExpression locationIsNotNull(boolean forMap) {
-        return forMap ? bookmark.latitude.isNotNull().and(bookmark.longitude.isNotNull()) : null;
+    private BooleanExpression locationIsNotNull(Boolean forMap) {
+        return forMap!=null && forMap ? bookmark.latitude.isNotNull().and(bookmark.longitude.isNotNull()) : null;
     }
 
     private BooleanExpression keywordContain(String keyword) {
