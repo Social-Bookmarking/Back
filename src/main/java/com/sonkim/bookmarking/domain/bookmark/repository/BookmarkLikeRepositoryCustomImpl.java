@@ -1,0 +1,38 @@
+package com.sonkim.bookmarking.domain.bookmark.repository;
+
+import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.sonkim.bookmarking.domain.bookmark.dto.LikeCountDto;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
+import static com.sonkim.bookmarking.domain.bookmark.entity.QBookmarkLike.bookmarkLike;
+
+@RequiredArgsConstructor
+public class BookmarkLikeRepositoryCustomImpl implements BookmarkLikeRepositoryCustom {
+
+    private final JPAQueryFactory queryFactory;
+
+    @Override
+    public List<LikeCountDto> findLikesCountForBookmarks(List<Long> bookmarkIds) {
+        return queryFactory
+                .select(Projections.constructor(LikeCountDto.class,
+                        bookmarkLike.bookmark.id,
+                        bookmarkLike.id.count()
+                ))
+                .from(bookmarkLike)
+                .where(bookmarkLike.bookmark.id.in(bookmarkIds))
+                .groupBy(bookmarkLike.bookmark.id)
+                .fetch();
+    }
+
+    @Override
+    public List<Long> findLikedBookmarkIdsForUser(Long userId, List<Long> bookmarkIds) {
+        return queryFactory
+                .select(bookmarkLike.bookmark.id)
+                .from(bookmarkLike)
+                .where(bookmarkLike.user.id.eq(userId).and(bookmarkLike.bookmark.id.in(bookmarkIds)))
+                .fetch();
+    }
+}

@@ -9,9 +9,5 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface BookmarkTagRepository extends JpaRepository<BookmarkTag, Long> {
-
-    // 북마크 태그 정보 한번에 조회
-    @Query("SELECT bt FROM BookmarkTag bt JOIN FETCH bt.tag WHERE bt.bookmark.id IN :bookmarkIds")
-    List<BookmarkTag> findAllByBookmarkIdsWithTags(@Param("bookmarkIds")List<Long> bookmarkIds);
+public interface BookmarkTagRepository extends JpaRepository<BookmarkTag, Long>, BookmarkTagRepositoryCustom {
 }
