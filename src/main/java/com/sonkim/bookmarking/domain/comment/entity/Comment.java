@@ -57,4 +57,12 @@ public class Comment {
         this.status = CommentStatus.DELETED;
         this.content = "[삭제된 댓글입니다.]";
     }
+
+    public void setParent(Comment parent) {
+        this.parent = parent;
+
+        if (parent != null) {
+            parent.getChildren().add(this);
+        }
+    }
 }
