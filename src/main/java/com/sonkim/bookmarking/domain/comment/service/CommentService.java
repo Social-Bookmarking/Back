@@ -6,6 +6,7 @@ import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.comment.dto.CommentDto;
 import com.sonkim.bookmarking.domain.comment.dto.CommentReplyCountDto;
 import com.sonkim.bookmarking.domain.comment.entity.Comment;
+import com.sonkim.bookmarking.domain.comment.enums.CommentStatus;
 import com.sonkim.bookmarking.domain.comment.repository.CommentRepository;
 import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
 import com.sonkim.bookmarking.domain.user.entity.User;
@@ -16,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,20 +41,19 @@ public class CommentService {
         log.info("userId: {}, bookmarkId: {} 댓글 등록 요청", userId, bookmarkId);
         User user = userService.getUserById(userId);
         Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
-        Comment parent = null;
-
-        // 답글인 경우 부모 댓글 설정
-        if (request.getParentId() != null) {
-            parent = commentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new EntityNotFoundException("부모 댓글을 찾을 수 없습니다."));
-        }
 
         Comment newComment = Comment.builder()
                 .user(user)
                 .bookmark(bookmark)
-                .parent(parent)
                 .content(request.getContent())
                 .build();
+
+        // 답글인 경우 부모 댓글 설정
+        if (request.getParentId() != null) {
+            Comment parent = commentRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new EntityNotFoundException("부모 댓글을 찾을 수 없습니다."));
+            newComment.setParent(parent);
+        }
 
         commentRepository.save(newComment);
     }
@@ -129,17 +128,53 @@ public class CommentService {
         boolean isCreator = comment.getUser().getId().equals(userId);
 
         // 댓글 작성자 본인과 관리자만 삭제 가능
-        if (!isCreator && teamMemberService.validateAdmin(userId, teamId)) {
-            throw new AuthorizationDeniedException("댓글을 삭제할 권한이 없습니다.");
+        if (!isCreator) {
+            teamMemberService.validateAdmin(userId, teamId);
         }
 
-        // 답글이 하나라도 있으면 내용만 변경, 없으면 완전 삭제
-        if (comment.getChildren().isEmpty()) {
-            log.info("답글이 없는 댓글(ID: {})을 DB에서 완전히 삭제", commentId);
+        // 최상위 댓글 OR 답글 분기
+        if (comment.getParent() == null) {
+            // 최상위 댓글인 경우 -> 전체 스레드 삭제
+            log.info("최상위 댓글(ID: {})과 모든 하위 답글을 DB에서 완전히 삭제", commentId);
             commentRepository.delete(comment);
         } else {
-            log.info("답글이 있는 댓글(ID: {})을 논리적으로 삭제", commentId);
-            comment.softDelete();
+            // 답글이 하나라도 있으면 내용만 변경, 없으면 완전 삭제
+            if (comment.getChildren().isEmpty()) {
+                Comment parent = comment.getParent();
+
+                // 부모 댓글의 답글 리스트에서 삭제
+                parent.getChildren().remove(comment);
+
+                log.info("답글이 없는 댓글(ID: {})을 DB에서 완전히 삭제", commentId);
+                commentRepository.delete(comment);
+
+                // 부모 댓글이 있었으면 부모도 정리해야 하는지 확인
+                cleanupParentIfOrphaned(parent);
+            } else {
+                log.info("답글이 있는 댓글(ID: {})을 논리적으로 삭제", commentId);
+                comment.softDelete();
+            }
+        }
+    }
+
+    @Transactional
+    protected void cleanupParentIfOrphaned(Comment parent) {
+        // 부모 댓글이 삭제된 상태이고 자식이 하나도 없는지 확인
+        if (parent.getStatus() == CommentStatus.DELETED && parent.getChildren().isEmpty()) {
+            log.info("삭제된 부모 댓글(ID: {})에 등록된 답글이 없으므로 함께 삭제", parent.getId());
+
+            // 조부모 댓글도 확인 수행
+            Comment grandParent = parent.getParent();
+
+            if (grandParent != null) {
+                grandParent.getChildren().remove(parent);
+            }
+
+            commentRepository.delete(parent);
+
+            if (grandParent != null) {
+                cleanupParentIfOrphaned(grandParent);
+            }
         }
     }
 
