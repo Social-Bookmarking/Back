@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.comment.service;
 
-import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.comment.dto.CommentDto;
@@ -14,9 +14,7 @@ import com.sonkim.bookmarking.domain.user.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,12 +58,20 @@ public class CommentService {
 
     // 최상위 댓글 목록 페이징 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<CommentDto.TopLevelResponseDto> getTopLevelComments(Long bookmarkId, Pageable pageable) {
-        // 페이징된 최상위 댓글 목록 조회
-        Page<Comment> comments = commentRepository.findByBookmark_IdAndParentIsNullOrderByCreatedAtAsc(bookmarkId, pageable);
-        List<Long> commentIds = comments.getContent().stream().map(Comment::getId).toList();
+    public CursorResultDto<CommentDto.TopLevelResponseDto> getTopLevelComments(Long bookmarkId, Long cursorId, int size) {
+        // 다음 페이지 존재 여부 확인을 위해 요청된 size보다 1개 더 조회
+        List<Comment> comments = commentRepository.findTopLevelCommentsAfterCursor(
+                bookmarkId, cursorId, PageRequest.of(0, size + 1)
+        );
+
+        boolean hasNext = false;
+        if (comments.size() > size) {
+            hasNext = true;
+            comments.remove(size);
+        }
 
         // 재귀 쿼리로 답글 수 조회
+        List<Long> commentIds = comments.stream().map(Comment::getId).collect(Collectors.toList());
         Map<Long, Integer> replyCountMap = Collections.emptyMap();
         if (!commentIds.isEmpty()) {
             replyCountMap = commentRepository.countRepliesForParents(commentIds).stream()
@@ -75,26 +81,33 @@ public class CommentService {
         final Map<Long, Integer> finalReplyCountMap = replyCountMap;
 
         // Page<CommentDto.TopLevelResponseDto> 로 변환
-        Page<CommentDto.TopLevelResponseDto> dtoPage = comments.map(comment -> CommentDto.TopLevelResponseDto.builder()
-                .commentId(comment.getId())
-                .content(comment.getContent())
-                .author(getAuthorInfo(comment.getUser()))
-                .createdAt(comment.getCreatedAt())
-                .replyCount(finalReplyCountMap.getOrDefault(comment.getId(), 0))
-                .build());
+        List<CommentDto.TopLevelResponseDto> dtoList = comments.stream()
+                .map(comment -> CommentDto.TopLevelResponseDto.builder()
+                        .commentId(comment.getId())
+                        .content(comment.getContent())
+                        .author(getAuthorInfo(comment.getUser()))
+                        .createdAt(comment.getCreatedAt())
+                        .replyCount(finalReplyCountMap.getOrDefault(comment.getId(), 0))
+                        .build())
+                .toList();
 
-        // PageResponseDto로 변환
-        return new PageResponseDto<>(dtoPage);
+        // 다음 커서 ID 설정
+        Long nextCursor = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getCommentId();
+
+        return new CursorResultDto<>(dtoList, nextCursor, hasNext);
     }
 
     // 댓글에 달린 답글 목록 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<CommentDto.ReplyResponseDto> getReplyComments(Long parentCommentId, Pageable pageable) {
-        // 답글 목록 가져오기
-        List<Comment> replies = commentRepository.findDescendantsPaged(parentCommentId, pageable);
+    public CursorResultDto<CommentDto.ReplyResponseDto> getReplyComments(Long parentCommentId, Long cursorId, int size) {
+        // 다음 페이지 확인을 위해 size + 1개 조회
+        List<Comment> replies = commentRepository.findDescendantsPaged(parentCommentId, cursorId, size + 1);
 
-        // 답글 개수 조회
-        long totalReplies = commentRepository.countDescendants(parentCommentId);
+        boolean hasNext = false;
+        if (replies.size() > size) {
+            hasNext = true;
+            replies.remove(size);
+        }
 
         // List<ReplyResponseDto>로 변환
         List<CommentDto.ReplyResponseDto> dtoList = replies.stream()
@@ -108,10 +121,10 @@ public class CommentService {
                 .toList();
 
         // 조회된 데이터, 페이징 정보, 전체 개수를 합쳐 Page 객체 생성
-        Page<CommentDto.ReplyResponseDto> dtoPage = new PageImpl<>(dtoList, pageable, totalReplies);
+        Long nextCursor = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getCommentId();
 
         // DTO로 변환
-        return new PageResponseDto<>(dtoPage);
+        return new CursorResultDto<>(dtoList, nextCursor, hasNext);
     }
 
     // 댓글 삭제
