@@ -1,7 +1,10 @@
 package com.sonkim.bookmarking.domain.team.dto;
 
+import com.sonkim.bookmarking.domain.team.enums.TeamStatus;
 import lombok.Builder;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 public class TeamDto {
 
@@ -20,6 +23,8 @@ public class TeamDto {
         private String description;
         private Long ownerId;
         private String ownerName;
+        private TeamStatus status;
+        private LocalDateTime deletionScheduledAt;
     }
 
     // 그룹 정보 조회(owner 제외)

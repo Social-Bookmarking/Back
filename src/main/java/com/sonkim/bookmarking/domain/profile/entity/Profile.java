@@ -28,14 +28,19 @@ public class Profile {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    public void update(String nickname, String imageKey) {
-        if (nickname != null) this.nickname = nickname;
-        if (imageKey != null) this.imageKey = imageKey;
-    }
-
     // 탈퇴 처리
     public void anonymize() {
         this.nickname = "탈퇴한 사용자";
         this.imageKey = null;
+    }
+
+    // 이미지 업데이트
+    public void updateImageKey(String imageKey) {
+        this.imageKey = imageKey;
+    }
+
+    // 닉네임 업데이트
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
     }
 }

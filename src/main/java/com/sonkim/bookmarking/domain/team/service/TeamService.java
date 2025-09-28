@@ -62,6 +62,8 @@ public class TeamService {
                 .description(team.getDescription())
                 .ownerId(team.getUser().getId())
                 .ownerName(team.getUser().getProfile().getNickname())
+                .status(team.getStatus())
+                .deletionScheduledAt(team.getDeletionScheduledAt())
                 .build();
     }
 
