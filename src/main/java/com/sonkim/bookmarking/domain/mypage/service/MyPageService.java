@@ -61,13 +61,29 @@ public class MyPageService {
         User user = userRepository.findByIdWithProfile(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없습니다. userId=" + userId));
 
-        String imageKey = updateRequestDto.getImageKey();
+        String newImageKey = updateRequestDto.getImageKey();
+        String oldImageKey = user.getProfile().getImageKey();
 
-        if (imageKey != null && !imageKey.isBlank()) {
-            s3Service.moveFileToPermanentStorage("profile-images/", imageKey);
+        if (newImageKey != null) {
+            if (newImageKey.isEmpty()) {
+                // 이미지 키가 공백으로 전달된 경우 프로필 이미지 삭제
+                user.getProfile().updateImageKey(null);
+                if (oldImageKey != null) {
+                    s3Service.deleteFile("profile-images/", oldImageKey);
+                }
+            } else {
+                // 이미지를 새로 변경하려는 경우
+                s3Service.moveFileToPermanentStorage("profile-images/", newImageKey);
+                user.getProfile().updateImageKey(newImageKey);
+                if (oldImageKey != null) {
+                    s3Service.deleteFile("profile-images/", oldImageKey);
+                }
+            }
         }
 
-        user.getProfile().update(updateRequestDto.getNickname(), updateRequestDto.getImageKey());
+        if (updateRequestDto.getNickname() != null) {
+            user.getProfile().updateNickname(updateRequestDto.getNickname());
+        }
     }
 
     // 비밀번호 변경

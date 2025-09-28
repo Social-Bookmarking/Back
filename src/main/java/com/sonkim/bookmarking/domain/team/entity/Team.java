@@ -6,6 +6,7 @@ import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -40,10 +41,12 @@ public class Team {
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    // 그룹 상태
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private TeamStatus status = TeamStatus.ACTIVE;
 
+    // 삭제 예정일
     private LocalDateTime deletionScheduledAt;
 
     public void update(TeamDto.TeamRequestDto teamRequestDto) {
@@ -58,7 +61,8 @@ public class Team {
     // 삭제 대기 상태로 변경
     public void scheduleDeletion() {
         this.status = TeamStatus.PENDING_DELETION;
-        this.deletionScheduledAt = LocalDateTime.now().plusDays(7);
+        LocalDate deletionDate = LocalDate.now().plusDays(8);
+        this.deletionScheduledAt = deletionDate.atTime(4, 0);
     }
 
     // 삭제 취소 후 다시 활성 상태로 변경

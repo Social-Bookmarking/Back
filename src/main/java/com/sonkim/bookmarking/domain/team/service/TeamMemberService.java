@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.domain.team.service;
 
+import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.team.dto.TeamMemberDto;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.entity.TeamMember;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class TeamMemberService {
 
     private final TeamMemberRepository teamMemberRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public void save(TeamMember teamMember) {
@@ -69,12 +71,20 @@ public class TeamMemberService {
         List<TeamMember> members = teamMemberRepository.findAllByTeam_Id(teamId);
 
         return members.stream()
-                .map(member -> TeamMemberDto.MemberResponseDto.builder()
-                        .userId(member.getUser().getId())
-                        .name(member.getUser().getProfile().getNickname())
-                        .profileImageUrl(member.getUser().getProfile().getImageKey())
-                        .permission(member.getPermission())
-                        .build())
+                .map(member -> {
+                    String imageUrl = null;
+                    String imageKey = member.getUser().getProfile().getImageKey();
+                    if (imageKey != null && !imageKey.isBlank()) {
+                        imageUrl = s3Service.generatePresignedGetUrl("profile-images/", member.getUser().getProfile().getImageKey()).toString();
+                    }
+
+                    return TeamMemberDto.MemberResponseDto.builder()
+                            .userId(member.getUser().getId())
+                            .name(member.getUser().getProfile().getNickname())
+                            .profileImageUrl(imageUrl)
+                            .permission(member.getPermission())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
