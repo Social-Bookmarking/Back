@@ -238,4 +238,15 @@ public class TeamService {
         if (team.getStatus() == TeamStatus.PENDING_DELETION)
             throw new IllegalStateException("삭제가 예정된 그룹에서는 이 작업을 수행할 수 없습니다.");
     }
+
+    @Transactional
+    public void deleteOrphanedTeams() {
+        // 활성 멤버가 없는 그룹 조회
+        List<Team> orphanedTeams = teamRepository.findOrphanedTeams();
+
+        if (!orphanedTeams.isEmpty()) {
+            log.info("{}개의 주인 없는 그룹을 삭제합니다.", orphanedTeams.size());
+            teamRepository.deleteAll(orphanedTeams);
+        }
+    }
 }

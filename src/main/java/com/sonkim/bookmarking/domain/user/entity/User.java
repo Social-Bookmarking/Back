@@ -51,6 +51,10 @@ public class User {
     public void withdraw() {
         this.userStatus = UserStatus.DELETED;
         this.deletedAt = LocalDateTime.now();
+
+        String uniqueSuffix = "_" + this.id + "_" + System.currentTimeMillis();
+        this.username = "deleted" + uniqueSuffix + "@deleted.com";
+
         this.password = null;
         profile.anonymize();
     }
