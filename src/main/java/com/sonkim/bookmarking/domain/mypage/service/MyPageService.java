@@ -133,7 +133,5 @@ public class MyPageService {
 
         // RefreshToken 삭제하여 세션 무효화
         tokenService.deleteRefreshToken(userId);
-
-        // 마지막 관리자인 그룹이 있는 경우 탈퇴가 불가능하도록 로직 추가 필요
     }
 }
