@@ -30,7 +30,7 @@ public class Profile {
 
     // 탈퇴 처리
     public void anonymize() {
-        this.nickname = "탈퇴한 사용자";
+        this.nickname = "탈퇴한 사용자" + this.id;
         this.imageKey = null;
     }
 
