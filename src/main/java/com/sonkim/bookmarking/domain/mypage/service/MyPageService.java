@@ -123,6 +123,7 @@ public class MyPageService {
     }
 
     // 탈퇴 처리
+    @Transactional
     public void deleteAccount(Long userId) {
         log.info("userId: {} 탈퇴 요청", userId);
 
