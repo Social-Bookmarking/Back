@@ -160,4 +160,18 @@ public class TeamController {
         teamService.cancelTeamDeletion(userDetails.getId(), groupId);
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "그룹 초대 코드 조회", description = "그룹의 초대 코드를 조회합니다.")
+    @GetMapping("/{groupId}/invite-code")
+    public ResponseEntity<TeamDto.CodeResponseDto> getInviteCode(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable Long groupId
+    ) {
+        String inviteCode = teamService.getInviteCode(userDetails.getId(), groupId);
+
+        TeamDto.CodeResponseDto response = TeamDto.CodeResponseDto.builder()
+                .code(inviteCode).build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }

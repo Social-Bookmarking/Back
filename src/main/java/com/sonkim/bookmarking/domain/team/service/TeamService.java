@@ -249,4 +249,14 @@ public class TeamService {
             teamRepository.deleteAll(orphanedTeams);
         }
     }
+
+    @Transactional(readOnly = true)
+    public String getInviteCode(long userId, long teamId) {
+        Team team = getTeamById(teamId);
+
+        // 관리자만 초대 코드를 확인할 수 있도록 조치
+        teamMemberService.validateAdmin(userId, teamId);
+
+        return team.getInviteCode();
+    }
 }

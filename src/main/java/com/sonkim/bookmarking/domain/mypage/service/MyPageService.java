@@ -9,6 +9,7 @@ import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.mypage.dto.MyProfileDto;
 import com.sonkim.bookmarking.domain.mypage.dto.PasswordDto;
 import com.sonkim.bookmarking.auth.token.service.TokenService;
+import com.sonkim.bookmarking.domain.profile.service.ProfileService;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.repository.UserRepository;
 import com.sonkim.bookmarking.domain.user.service.UserService;
@@ -33,6 +34,7 @@ public class MyPageService {
     private final BookmarkService bookmarkService;
     private final UserService userService;
     private final S3Service s3Service;
+    private final ProfileService profileService;
 
     @Transactional(readOnly = true)
     public MyProfileDto.MyProfileResponseDto getMyProfile(Long userId) {
@@ -68,21 +70,22 @@ public class MyPageService {
             if (newImageKey.isEmpty()) {
                 // 이미지 키가 공백으로 전달된 경우 프로필 이미지 삭제
                 user.getProfile().updateImageKey(null);
-                if (oldImageKey != null) {
-                    s3Service.deleteFile("profile-images/", oldImageKey);
-                }
             } else {
                 // 이미지를 새로 변경하려는 경우
                 s3Service.moveFileToPermanentStorage("profile-images/", newImageKey);
                 user.getProfile().updateImageKey(newImageKey);
-                if (oldImageKey != null) {
-                    s3Service.deleteFile("profile-images/", oldImageKey);
-                }
+            }
+            if (oldImageKey != null) {
+                s3Service.deleteFile("profile-images/", oldImageKey);
             }
         }
 
-        if (updateRequestDto.getNickname() != null) {
-            user.getProfile().updateNickname(updateRequestDto.getNickname());
+        String nickname = updateRequestDto.getNickname();
+        if (nickname != null) {
+            if (profileService.nicknameExists(nickname)) {
+                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            }
+            user.getProfile().updateNickname(nickname);
         }
     }
 
