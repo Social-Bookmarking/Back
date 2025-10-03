@@ -1,6 +1,7 @@
 package com.sonkim.bookmarking.domain.comment.service;
 
 import com.sonkim.bookmarking.common.dto.CursorResultDto;
+import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.comment.dto.CommentDto;
@@ -32,6 +33,7 @@ public class CommentService {
     private final UserService userService;
     private final BookmarkService bookmarkService;
     private final TeamMemberService teamMemberService;
+    private final S3Service s3Service;
 
     // 댓글 등록
     @Transactional
@@ -193,10 +195,17 @@ public class CommentService {
 
     // 댓글 작성자 정보 추출 메서드
     private CommentDto.AuthorInfo getAuthorInfo(User user) {
+        String imageUrl = null;
+        String imageKey = user.getProfile().getImageKey();
+
+        if (imageKey != null && !imageKey.isBlank()) {
+            imageUrl = s3Service.generatePresignedGetUrl("profile-images/", imageKey).toString();
+        }
+
         return CommentDto.AuthorInfo.builder()
                 .userId(user.getId())
                 .nickname(user.getProfile().getNickname())
-                .profileImageUrl(user.getProfile().getImageKey())
+                .profileImageUrl(imageUrl)
                 .build();
     }
 }

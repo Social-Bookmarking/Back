@@ -52,7 +52,8 @@ public class SecurityConfig {
             config.setAllowedOrigins(List.of(
                     "http://localhost:5173",
                     "https://localhost:5173",
-                    "http://localhost:8080"
+                    "http://localhost:8080",
+                    "https://marksphere.link"
             ));     // 허용할 도메인 설정
             config.setAllowedMethods(List.of("*"));     // 모든 HTTP 메서드 허용
             config.setAllowedHeaders(List.of("*"));     // 모든 헤더 허용
