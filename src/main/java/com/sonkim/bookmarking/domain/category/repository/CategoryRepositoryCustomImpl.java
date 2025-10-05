@@ -16,7 +16,7 @@ public class CategoryRepositoryCustomImpl implements CategoryRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<CategoryDto.CategoryResponseDto> findAllWithBookmarkCountByTeam_Id(Long teamId) {
+    public List<CategoryDto.CategoryResponseDto> findAllWithBookmarkCountByTeamId(Long teamId) {
         return queryFactory
                 .select(Projections.constructor(CategoryDto.CategoryResponseDto.class,
                         category.id,
@@ -27,6 +27,7 @@ public class CategoryRepositoryCustomImpl implements CategoryRepositoryCustom {
                 .leftJoin(bookmark).on(bookmark.category.id.eq(category.id))
                 .where(category.team.id.eq(teamId))
                 .groupBy(category.id, category.name)
+                .orderBy(category.position.asc())
                 .fetch();
     }
 }

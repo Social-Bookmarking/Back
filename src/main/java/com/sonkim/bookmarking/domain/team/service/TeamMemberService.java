@@ -6,6 +6,7 @@ import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.entity.TeamMember;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.repository.TeamMemberRepository;
+import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class TeamMemberService {
 
     private final TeamMemberRepository teamMemberRepository;
     private final S3Service s3Service;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public void save(TeamMember teamMember) {
@@ -100,6 +102,13 @@ public class TeamMemberService {
             throw new IllegalArgumentException("자기 자신의 권한은 변경할 수 없습니다.");
         }
 
+        // '그룹 소유자'의 권한은 변경 불가
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new EntityNotFoundException("그룹 정보를 찾을 수 없습니다. teamId=" + teamId));
+        if (team.getOwner().getId().equals(memberId)) {
+            throw new IllegalArgumentException("그룹 소유자의 권한은 변경할 수 없습니다.");
+        }
+
         // 역할을 변경할 유저 정보 가져오기
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. memberId: " + memberId + ", teamId: " + teamId));
@@ -120,6 +129,13 @@ public class TeamMemberService {
             throw new IllegalArgumentException("자기 자신은 방출할 수 없습니다.");
         }
 
+        // '그룹 소유자' 방출 방지
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new EntityNotFoundException("그룹 정보를 찾을 수 없습니다. teamId=" + teamId));
+        if (team.getOwner().getId().equals(memberId)) {
+            throw new IllegalArgumentException("그룹 소유자는 방출할 수 없습니다.");
+        }
+
         // 대상 유저 방출
         TeamMember memberToKick = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. teamId: " + teamId + ", memberId: " + memberId));
@@ -130,16 +146,15 @@ public class TeamMemberService {
     public void leaveTeam(Long userId, Long teamId) {
         log.info("userId: {}, teamId: {}  그룹 탈퇴 요청", userId, teamId);
 
-        // 탈퇴할 멤버 정보 가져오기
+        // 그룹 정보와 멤버 정보 조회
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new EntityNotFoundException("그룹 정보를 찾을 수 없습니다. teamId=" + teamId));
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(userId, teamId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. userId: " + userId + ", teamId: " + teamId));
 
-        // ADMIN은 무조건 한 명은 있도록 마지막 남은 ADMIN은 탈퇴 불가능
-        if (member.getPermission().equals(Permission.ADMIN)) {
-            long adminCount = teamMemberRepository.countByTeam_IdAndPermission(teamId, Permission.ADMIN);
-            if (adminCount <= 1) {
-                throw new IllegalStateException("그룹의 관리자는 무조건 한 명 이상 존재해야 합니다.");
-            }
+        // '그룹 소유자'는 탈퇴 불가능
+        if(team.getOwner().getId().equals(userId)) {
+            throw new IllegalStateException("그룹의 소유자는 그룹을 탈퇴할 수 없습니다. (그룹 삭제를 이용해주세요)");
         }
 
         // 멤버십 정보 삭제

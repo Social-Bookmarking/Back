@@ -23,7 +23,7 @@ public class Team {
     // 소유주 ID
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
-    private User user;
+    private User owner;
 
     // 그룹 이름
     @Column(nullable = false, length = 20)

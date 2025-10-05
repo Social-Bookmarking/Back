@@ -23,4 +23,11 @@ public class CategoryDto {
         private String name;
         private Long bookmarkCount;
     }
+
+    // 카테고리 순서 업데이트 요청 DTO
+    @Data
+    public static class UpdatePositionRequestDto {
+        private Long categoryId;
+        private Integer position;
+    }
 }
