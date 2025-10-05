@@ -74,4 +74,16 @@ public class CategoryController {
         List<CategoryDto.CategoryResponseDto> updatedCategories = categoryService.deleteCategory(userDetails.getId(), categoryId);
         return ResponseEntity.ok(updatedCategories);
     }
+
+    @Operation(summary = "카테고리 순서 일괄 수정", description = "특정 그룹 내 카테고리들의 표시 순서를 한 번에 업데이트합니다. EDITOR 이상의 권한이 필요합니다.")
+    @ApiResponse(responseCode = "200", description = "순서 업데이트 성공")
+    @PatchMapping("/groups/{groupId}/categories/order")
+    public ResponseEntity<Void> updateCategoryPositions(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable Long groupId,
+            @RequestBody List<CategoryDto.UpdatePositionRequestDto> requests
+    ) {
+        categoryService.updateCategoryPositions(userDetails.getId(), groupId, requests);
+        return ResponseEntity.ok().build();
+    }
 }

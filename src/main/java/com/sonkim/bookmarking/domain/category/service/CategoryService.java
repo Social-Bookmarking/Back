@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -42,11 +44,15 @@ public class CategoryService {
             throw new IllegalStateException("이미 존재하는 카테고리 이름입니다.");
         }
 
+        // 현재 그룹의 카테고리 개수
+        long currentCategoryCount = categoryRepository.countByTeam_Id(teamId);
+
         // 카테고리 객체 생성 및 저장
         Team team = teamService.getTeamById(teamId);
         Category newCategory = Category.builder()
                 .name(request.getName())
                 .team(team)
+                .position((int) currentCategoryCount + 1)
                 .build();
         categoryRepository.save(newCategory);
 
@@ -57,7 +63,7 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryDto.CategoryResponseDto> getCategoriesByTeam(Long teamId) {
         // 각 카테고리 정보와 북마크 개수 조회
-        List<CategoryDto.CategoryResponseDto> categoriesWithCount = categoryRepository.findAllWithBookmarkCountByTeam_Id(teamId);
+        List<CategoryDto.CategoryResponseDto> categoriesWithCount = categoryRepository.findAllWithBookmarkCountByTeamId(teamId);
 
         // 그룹 전체 북마크 개수 조회
         long totalBookmarkCount = bookmarkRepository.countByTeam_Id(teamId);
@@ -124,6 +130,26 @@ public class CategoryService {
         categoryRepository.delete(category);
 
         return getCategoriesByTeam(teamId);
+    }
+
+    // 카테고리 순서 수정
+    @Transactional
+    public void updateCategoryPositions(Long userId, Long teamId, List<CategoryDto.UpdatePositionRequestDto> requests) {
+        log.info("userId: {}, teamId: {} 카테고리 순서 수정 요청", userId, teamId);
+
+        // 요청자가 EDITOR 권한이 있는지 검사
+        teamMemberService.validateEditor(userId, teamId);
+
+        // 요청된 모든 카테고리 ID 조회
+        List<Long> categoryIds = requests.stream().map(CategoryDto.UpdatePositionRequestDto::getCategoryId).toList();
+        Map<Long, Category> categoryMap = categoryRepository.findAllById(categoryIds).stream()
+                .collect(Collectors.toMap(Category::getId, category -> category));
+
+        // 각 카테고리의 position 값 업데이트
+        for (CategoryDto.UpdatePositionRequestDto request : requests) {
+            Category category = categoryMap.get(request.getCategoryId());
+            category.updatePosition(request.getPosition());
+        }
     }
 
     public Category getCategoryById(Long categoryId) {

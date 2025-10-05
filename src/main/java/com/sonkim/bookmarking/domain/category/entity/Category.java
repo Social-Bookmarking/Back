@@ -25,6 +25,14 @@ public class Category {
     @Column(nullable = false, length = 20)
     private String name;
 
+    // 카테고리 순서
+    @Column(nullable = false)
+    private Integer position;
+
     public void update(CategoryDto.CategoryRequestDto request) {
         if (request.getName() != null) this.name = request.getName();}
+
+    public void updatePosition(Integer position) {
+        this.position = position;
+    }
 }

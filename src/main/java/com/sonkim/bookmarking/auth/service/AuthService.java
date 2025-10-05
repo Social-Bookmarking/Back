@@ -68,7 +68,7 @@ public class AuthService {
         // 기본 개인 그룹 생성
         Team personalTeam = Team.builder()
                 .name(dto.getNickname() + "님의 개인 공간")
-                .user(newUser)
+                .owner(newUser)
                 .build();
         teamService.saveTeam(personalTeam);
 

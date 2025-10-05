@@ -201,6 +201,36 @@ public class BookmarkService {
             }
         }
 
+        if (dto.getTagNames() != null) {
+            // 현재 북마크에 연결된 태그들 조회
+            List<Tag> oldTags = bookmarkTagRepository.findAllByBookmarkId(bookmarkId).stream()
+                    .map(BookmarkTag::getTag)
+                    .toList();
+
+            // 요청으로 들어온 Tag 정보 조회
+            List<Tag> newTags = tagService.findOrCreateTags(userId, bookmark.getTeam().getId(), dto.getTagNames());
+
+            // 삭제할 태그를 찾아서 BookmarkTag 연결 끊기
+            List<BookmarkTag> tagsToRemove = bookmark.getBookmarkTags().stream()
+                    .filter(bookmarkTag -> !newTags.contains(bookmarkTag.getTag()))
+                    .toList();
+            bookmark.getBookmarkTags().removeAll(tagsToRemove);
+            bookmarkTagRepository.deleteAll(tagsToRemove);
+
+            // 추가할 태그를 찾아서 BookmarkTag 생성하여 연결
+            List<Tag> tagsToAdd = newTags.stream()
+                    .filter(tag -> !oldTags.contains(tag))
+                    .toList();
+
+            for (Tag tag : tagsToAdd) {
+                BookmarkTag bookmarkTag = BookmarkTag.builder()
+                        .bookmark(bookmark)
+                        .tag(tag)
+                        .build();
+                bookmarkTagRepository.save(bookmarkTag);
+            }
+        }
+
         bookmark.update(dto);
     }
 

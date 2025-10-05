@@ -60,8 +60,8 @@ public class TeamService {
         return TeamDto.TeamResponseDto.builder()
                 .name(team.getName())
                 .description(team.getDescription())
-                .ownerId(team.getUser().getId())
-                .ownerName(team.getUser().getProfile().getNickname())
+                .ownerId(team.getOwner().getId())
+                .ownerName(team.getOwner().getProfile().getNickname())
                 .status(team.getStatus())
                 .deletionScheduledAt(team.getDeletionScheduledAt())
                 .build();
@@ -96,7 +96,7 @@ public class TeamService {
 
         // 세로운 Team 객체 생성
         Team newTeam = Team.builder()
-                .user(owner)
+                .owner(owner)
                 .name(createDto.getName())
                 .description(createDto.getDescription())
                 .build();
@@ -165,8 +165,8 @@ public class TeamService {
         return TeamDto.TeamResponseDto.builder()
                 .name(team.getName())
                 .description(team.getDescription())
-                .ownerId(team.getUser().getId())
-                .ownerName(team.getUser().getProfile().getNickname())
+                .ownerId(team.getOwner().getId())
+                .ownerName(team.getOwner().getProfile().getNickname())
                 .build();
     }
 
