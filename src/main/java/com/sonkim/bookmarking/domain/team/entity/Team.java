@@ -70,4 +70,9 @@ public class Team {
         this.status = TeamStatus.ACTIVE;
         this.deletionScheduledAt = null;
     }
+
+    // 소유주 변경
+    public void updateOwner(User owner) {
+        this.owner = owner;
+    }
 }

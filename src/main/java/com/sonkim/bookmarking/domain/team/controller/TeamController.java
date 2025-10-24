@@ -7,6 +7,7 @@ import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.service.QrCodeService;
 import com.sonkim.bookmarking.domain.team.service.TeamService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -108,8 +109,9 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "그룹 초대 QR 코드 이미지 생성", description = "그룹 초대를 위한 QR 코드를 이미지(PNG) 형식으로 생성하여 반환합니다.")
+    @Operation(summary = "그룹 초대 QR 코드 이미지 생성", description = "그룹 초대를 위한 QR 코드를 이미지(PNG) 형식으로 생성하여 반환합니다. ADMIN 이상의 권한을 가진 유저만 가능")
     @ApiResponse(responseCode = "200", description = "QR 코드 생성 성공", content = @Content(mediaType = "image/png"))
+    @ApiResponse(responseCode = "403", description = "권한 부족")
     @GetMapping("/{groupId}/invite-qr")
     public ResponseEntity<byte[]> generateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                 @PathVariable("groupId") Long groupId) {
@@ -118,10 +120,10 @@ public class TeamController {
             String inviteCode = teamService.getInviteCodeByTeamId(groupId);
 
             // QR 코드에 담을 URL 생성
-            String joinUrl = "http://localhost:8080/api/groups/join?code=" + inviteCode;    // 차후 도메인으로 수정
+            String joinUrl = "https://marksphere.link/api/groups/join?code=" + inviteCode;    // 차후 도메인으로 수정
 
             // QR 코드 이미지 생성
-            byte[] qrCodeImage = qrCodeService.generateQrCodeImage(userDetails.getId(), joinUrl);
+            byte[] qrCodeImage = qrCodeService.generateQrCodeImage(userDetails.getId(), groupId, joinUrl);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_PNG)
@@ -173,5 +175,21 @@ public class TeamController {
                 .code(inviteCode).build();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "그룹 소유권 이전", description = "그룹의 소유권을 다른 멤버에게 이전합니다. 현재 소유주만 실행할 수 있습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "소유권 이전 성공"),
+            @ApiResponse(responseCode = "403", description = "권한 없음 (소유주가 아님)"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (예: 멤버가 아닌 사용자에게 이전 시도)")
+    })
+    @PostMapping("/{groupId}/transfer-ownership")
+    public ResponseEntity<Void> transferOwnership(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @Parameter(description = "소유권을 이전할 그룹 ID") @PathVariable Long groupId,
+            @RequestBody TeamDto.OwnerTransferDto transferDto)
+    {
+        teamService.transferOwnership(userDetails.getId(), transferDto.getNewOwnerId(), groupId);
+        return ResponseEntity.ok().build();
     }
 }
