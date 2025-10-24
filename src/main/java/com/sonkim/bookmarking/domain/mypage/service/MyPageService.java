@@ -1,15 +1,20 @@
 package com.sonkim.bookmarking.domain.mypage.service;
 
 import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.exception.OwnershipTransferRequiredException;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.mypage.dto.MyProfileDto;
+import com.sonkim.bookmarking.domain.mypage.dto.OwnershipRequiredGroupDto;
 import com.sonkim.bookmarking.domain.mypage.dto.PasswordDto;
 import com.sonkim.bookmarking.auth.token.service.TokenService;
 import com.sonkim.bookmarking.domain.profile.service.ProfileService;
+import com.sonkim.bookmarking.domain.team.entity.Team;
+import com.sonkim.bookmarking.domain.team.repository.TeamMemberRepository;
+import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.repository.UserRepository;
 import com.sonkim.bookmarking.domain.user.service.UserService;
@@ -21,6 +26,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -35,6 +42,8 @@ public class MyPageService {
     private final UserService userService;
     private final S3Service s3Service;
     private final ProfileService profileService;
+    private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
 
     @Transactional(readOnly = true)
     public MyProfileDto.MyProfileResponseDto getMyProfile(Long userId) {
@@ -128,6 +137,24 @@ public class MyPageService {
     // 탈퇴 처리
     @Transactional
     public void deleteAccount(Long userId) {
+        // 탈퇴하려는 사용자가 속한 그룹 목록 조회
+        List<Team> ownedGroups = teamRepository.findAllByOwner_Id(userId);
+
+        // 소유한 그룹 중, 개인 그룹이 아닌 그룹만 필터링
+        List<OwnershipRequiredGroupDto> groupsRequiringAction = ownedGroups.stream()
+                .filter(team -> teamMemberRepository.countByTeam_Id(team.getId()) > 1)
+                .map(team -> OwnershipRequiredGroupDto.builder()
+                        .groupId(team.getId())
+                        .groupName(team.getName())
+                        .build()
+                )
+                .toList();
+
+        // 조치가 필요한 그룹이 하나라도 있으면 예외 발생
+        if (!groupsRequiringAction.isEmpty()) {
+            throw new OwnershipTransferRequiredException(groupsRequiringAction);
+        }
+
         log.info("userId: {} 탈퇴 요청", userId);
 
         // 사용자 정보 불러와서 탈퇴 처리

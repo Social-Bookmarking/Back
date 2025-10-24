@@ -160,4 +160,10 @@ public class TeamMemberService {
         // 멤버십 정보 삭제
         teamMemberRepository.delete(member);
     }
+
+    @Transactional(readOnly = true)
+    public TeamMember findTeamMember(Long userId, Long teamId) {
+        return teamMemberRepository.findByUser_IdAndTeam_Id(userId, teamId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 멤버십 정보를 찾을 수 없습니다."));
+    }
 }

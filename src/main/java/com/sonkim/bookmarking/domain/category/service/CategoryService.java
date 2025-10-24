@@ -95,7 +95,7 @@ public class CategoryService {
         teamService.validateGroupIsActive(teamId);
 
         // 요청자가 권한이 있는지 검사
-        teamMemberService.validateAdmin(userId, teamId);
+        teamMemberService.validateEditor(userId, teamId);
 
         // 동일한 이름의 카테고리가 있는지 확인
         if(categoryRepository.existsByNameAndTeam_Id(request.getName(), teamId)) {

@@ -84,6 +84,18 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage());
     }
 
+    // 회원 탈퇴 시 소유주 변경이 필요한 그룹이 있을 경우 예외 처리
+    @ExceptionHandler(OwnershipTransferRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handleOwnershipTransferRequiredException(OwnershipTransferRequiredException e) {
+        log.warn("회원 탈퇴 실패: 소유권 이전 필요. {}", e.getMessage());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", e.getMessage());
+        response.put("requiredActionGroups", e.getGroups());
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
     // 범용 예외 처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {

@@ -5,14 +5,17 @@ import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.entity.TeamMember;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.enums.TeamStatus;
+import com.sonkim.bookmarking.domain.team.repository.TeamMemberRepository;
 import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
+import com.sonkim.bookmarking.domain.user.enums.UserStatus;
 import com.sonkim.bookmarking.domain.user.service.UserService;
 import com.sonkim.bookmarking.common.exception.MemberAlreadyExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.RandomStringGenerator;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -258,5 +261,32 @@ public class TeamService {
         teamMemberService.validateAdmin(userId, teamId);
 
         return team.getInviteCode();
+    }
+
+    @Transactional
+    public void transferOwnership(Long currentOwnerId, Long newOwnerId, Long teamId) {
+        // 그룹 정보 조회
+        Team team = getTeamById(teamId);
+
+        // 요청자 검사
+        if(!team.getOwner().getId().equals(currentOwnerId)) {
+            throw new AuthorizationDeniedException("그룹 소유권 이전 권한이 없습니다.");
+        }
+
+        // 자기 자신에게 소유권을 이전하려는 경우 방지
+        if(currentOwnerId.equals(newOwnerId)) {
+            throw new IllegalArgumentException("자기 자신에게 소유권을 이전할 수 없습니다.");
+        }
+
+        // 새로운 소유주 조회 및 검사
+        User newOwner = userService.getUserById(newOwnerId);
+        TeamMember newOwnerMembership = teamMemberService.findTeamMember(newOwnerId, teamId);
+        if (newOwner.getUserStatus() != UserStatus.ACTIVE) {
+            throw new IllegalArgumentException("탈퇴한 사용자에게는 소유권을 이전할 수 없습니다.");
+        }
+
+        // 소유주 변경
+        newOwnerMembership.updatePermission(Permission.ADMIN);
+        team.updateOwner(newOwner);
     }
 }

@@ -55,4 +55,10 @@ public class TeamDto {
     public static class CodeResponseDto {
         private String code;
     }
+
+    // 그룹 소유주 이전
+    @Data
+    public static class OwnerTransferDto {
+        private Long newOwnerId;
+    }
 }

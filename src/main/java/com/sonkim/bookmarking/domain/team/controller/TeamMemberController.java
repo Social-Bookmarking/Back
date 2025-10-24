@@ -66,7 +66,7 @@ public class TeamMemberController {
     @Operation(summary = "그룹 탈퇴", description = "멤버 스스로 그룹에서 나갑니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "그룹 탈퇴 성공"),
-            @ApiResponse(responseCode = "400", description = "마지막 남은 관리자는 탈퇴할 수 없음"),
+            @ApiResponse(responseCode = "409", description = "마지막 남은 관리자는 탈퇴할 수 없음"),
             @ApiResponse(responseCode = "404", description = "그룹 또는 멤버를 찾을 수 없음")
     })
     @DeleteMapping("/{groupId}/leave")

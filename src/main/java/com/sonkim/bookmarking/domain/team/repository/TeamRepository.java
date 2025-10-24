@@ -20,4 +20,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             "(SELECT 1 FROM TeamMember tm JOIN tm.user u " +
             "WHERE tm.team = t AND u.userStatus = 'ACTIVE')")
     List<Team> findOrphanedTeams();
+
+    List<Team> findAllByOwner_Id(Long ownerId);
 }
