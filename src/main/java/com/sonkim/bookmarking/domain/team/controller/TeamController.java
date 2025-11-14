@@ -1,5 +1,6 @@
 package com.sonkim.bookmarking.domain.team.controller;
 
+import com.google.zxing.WriterException;
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.common.aop.Idempotent;
 import com.sonkim.bookmarking.domain.team.dto.TeamDto;
@@ -17,8 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @Tag(name = "그룹 관리", description = "그룹 생성, 가입, 관리 관련 API")
 @Slf4j
@@ -113,14 +117,14 @@ public class TeamController {
     @ApiResponse(responseCode = "200", description = "QR 코드 생성 성공", content = @Content(mediaType = "image/png"))
     @ApiResponse(responseCode = "403", description = "권한 부족")
     @GetMapping("/{groupId}/invite-qr")
-    public ResponseEntity<byte[]> generateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
+    public ResponseEntity<?> generateInviteCode(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                 @PathVariable("groupId") Long groupId) {
         try {
             // 그룹의 초대 코드 가져오기
             String inviteCode = teamService.getInviteCodeByTeamId(groupId);
 
             // QR 코드에 담을 URL 생성
-            String joinUrl = "https://marksphere.link/api/groups/join?code=" + inviteCode;    // 차후 도메인으로 수정
+            String joinUrl = "https://marksphere.link/group/qr/join?code=" + inviteCode;    // 차후 도메인으로 수정
 
             // QR 코드 이미지 생성
             byte[] qrCodeImage = qrCodeService.generateQrCodeImage(userDetails.getId(), groupId, joinUrl);
@@ -128,8 +132,11 @@ public class TeamController {
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_PNG)
                     .body(qrCodeImage);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (AuthorizationDeniedException e) {
+            throw e;
+        } catch (IOException | WriterException e) {
+            log.error("QR 코드 생성 실패 (I/O 또는 Writer 오류)", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("QR 코드 생성 중 오류가 발생했습니다.");
         }
     }
 

@@ -1,16 +1,14 @@
 package com.sonkim.bookmarking.domain.bookmark.repository;
 
+import com.querydsl.core.types.Projections;
+import com.sonkim.bookmarking.domain.bookmark.dto.LikedBookmarkWrapper;
 import jakarta.persistence.EntityManager;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkSearchCond;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.category.entity.Category;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.support.PageableExecutionUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +25,7 @@ public class BookmarkRepositoryCustomImpl implements BookmarkRepositoryCustom {
     private final EntityManager em;
 
     @Override
-    public Page<Bookmark> search(Long teamId, BookmarkSearchCond cond, Pageable pageable) {
+    public List<Bookmark> search(Long teamId, BookmarkSearchCond cond, Long cursorId, int size) {
         List<Bookmark> content = queryFactory
                 .select(bookmark)
                 .from(bookmark)
@@ -37,26 +35,15 @@ public class BookmarkRepositoryCustomImpl implements BookmarkRepositoryCustom {
                         keywordContain(cond.getKeyword()),
                         tagIdEq(cond.getTagId()),
                         categoryIdEq(cond.getCategoryId()),
-                        locationIsNotNull(cond.getForMap())
+                        locationIsNotNull(cond.getForMap()),
+                        cursorIdLessThen(cursorId)
                 )
                 .distinct()
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(size)
+                .orderBy(bookmark.id.desc())
                 .fetch();
 
-        JPAQuery<Long> countQuery = queryFactory
-                .select(bookmark.countDistinct())
-                .from(bookmark)
-                .leftJoin(bookmark.bookmarkTags, bookmarkTag)
-                .where(
-                        bookmark.team.id.eq(teamId),
-                        keywordContain(cond.getKeyword()),
-                        tagIdEq(cond.getCategoryId()),
-                        categoryIdEq(cond.getCategoryId()),
-                        locationIsNotNull(cond.getForMap())
-                );
-
-        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+        return content;
     }
 
     @Override
@@ -85,23 +72,34 @@ public class BookmarkRepositoryCustomImpl implements BookmarkRepositoryCustom {
     }
 
     @Override
-    public Page<Bookmark> findLikedBookmarksByUser_Id(Long userId, Pageable pageable) {
-        List<Bookmark> content = queryFactory
-                .select(bookmark)
-                .from(bookmark)
-                .join(bookmark.bookmarkLikes, bookmarkLike)
-                .where(bookmarkLike.user.id.eq(userId))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+    public List<Bookmark> findMyBookmarksByUser_Id(Long userId, Long cursorId, int size) {
+        return queryFactory
+                .selectFrom(bookmark)
+                .where(
+                        bookmark.user.id.eq(userId),
+                        cursorIdLessThen(cursorId)
+                )
+                .orderBy(bookmark.id.desc())
+                .limit(size)
                 .fetch();
+    }
 
-        JPAQuery<Long> countQuery = queryFactory
-                .select(bookmark.count())
-                .from(bookmark)
-                .join(bookmark.bookmarkLikes, bookmarkLike)
-                .where(bookmarkLike.user.id.eq(userId));
-
-        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+    @Override
+    public List<LikedBookmarkWrapper> findLikedBookmarksByUser_Id(Long userId, Long cursorId, int size) {
+        return queryFactory
+                .select(Projections.constructor(LikedBookmarkWrapper.class,
+                        bookmark,
+                        bookmarkLike.id
+                ))
+                .from(bookmarkLike)
+                .join(bookmarkLike.bookmark, bookmark)
+                .where(
+                        bookmarkLike.user.id.eq(userId),
+                        bookmarkLikedCursorIdLessThen(cursorId)
+                )
+                .orderBy(bookmarkLike.id.desc())
+                .limit(size)
+                .fetch();
     }
 
     private BooleanExpression locationIsNotNull(Boolean forMap) {
@@ -119,5 +117,13 @@ public class BookmarkRepositoryCustomImpl implements BookmarkRepositoryCustom {
 
     private BooleanExpression tagIdEq(Long tagId) {
         return tagId != null ? bookmarkTag.tag.id.eq(tagId) : null;
+    }
+
+    private BooleanExpression cursorIdLessThen(Long cursorId) {
+        return cursorId != null ? bookmark.id.lt(cursorId) : null;
+    }
+
+    private BooleanExpression bookmarkLikedCursorIdLessThen(Long cursorId) {
+        return cursorId != null ? bookmarkLike.id.lt(cursorId) : null;
     }
 }

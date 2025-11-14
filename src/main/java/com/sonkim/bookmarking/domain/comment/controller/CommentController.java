@@ -29,12 +29,12 @@ public class CommentController {
     @ApiResponse(responseCode = "201", description = "댓글 생성 성공")
     @PostMapping("/bookmarks/{bookmarkId}/comments")
     @Idempotent
-    public ResponseEntity<Void> createComment(
+    public ResponseEntity<CommentDto.CreateResponseDto> createComment(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Parameter(description = "댓글/답글을 작성할 북마크 ID") @PathVariable("bookmarkId") Long bookmarkId,
             @RequestBody CommentDto.CreateRequestDto request) {
-        commentService.createComment(userDetails.getId(), bookmarkId, request);
-        return ResponseEntity.status(201).build();
+        CommentDto.CreateResponseDto newCommentDto = commentService.createComment(userDetails.getId(), bookmarkId, request);
+        return ResponseEntity.status(201).body(newCommentDto);
     }
 
     @Operation(summary = "최상위 댓글 목록 조회 (페이징)", description = "특정 북마크의 최상위 댓글 목록을 페이징하여 조회합니다.")

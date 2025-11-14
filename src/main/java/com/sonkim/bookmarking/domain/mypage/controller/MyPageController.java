@@ -1,7 +1,7 @@
 package com.sonkim.bookmarking.domain.mypage.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
-import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.common.s3.dto.PresignedUrlDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
@@ -16,8 +16,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -78,29 +76,33 @@ public class MyPageController {
     @Operation(summary = "내가 작성한 북마크 목록 조회",
             description = "현재 로그인한 사용자가 작성한 모든 북마크를 페이징하여 조회합니다.",
             parameters = {
-                    @Parameter(name = "page", description = "표시할 페이지 (1부터 시작)")
+                    @Parameter(name = "cursor", description = "다음 페이지를 위한 커서 ID(마지막으로 조회한 북마크 ID, 첫 페이지는 null)"),
+                    @Parameter(name = "size", description = "한 페이지당 항목 수")
             })
     @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공")
     @GetMapping("/bookmarks")
-    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getMyBookmarks(
+    public ResponseEntity<CursorResultDto<BookmarkResponseDto>> getMyBookmarks(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
-        PageResponseDto<BookmarkResponseDto> myBookmarks = myPageService.getMyBookmarks(userDetails.getId(), pageable);
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false, defaultValue = "10") int size) {
+        CursorResultDto<BookmarkResponseDto> myBookmarks = myPageService.getMyBookmarks(userDetails.getId(), cursor, size);
         return ResponseEntity.ok(myBookmarks);
     }
 
     @Operation(summary = "내가 '좋아요'한 북마크 목록 조회",
             description = "현재 로그인한 사용자가 '좋아요'를 누른 북마크를 페이징하여 조회합니다.",
             parameters = {
-                    @Parameter(name = "page", description = "표시할 페이지 (1부터 시작)")
+                    @Parameter(name = "cursor", description = "다음 페이지를 위한 커서 ID(마지막으로 조회한 북마크 ID, 첫 페이지는 null)"),
+                    @Parameter(name = "size", description = "한 페이지당 항목 수")
             })
     @ApiResponse(responseCode = "200", description = "북마크 목록 조회 성공")
     @GetMapping("/liked-bookmarks")
-    public ResponseEntity<PageResponseDto<BookmarkResponseDto>> getMyLikedBookmarks(
+    public ResponseEntity<CursorResultDto<BookmarkResponseDto>> getMyLikedBookmarks(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @Parameter(hidden = true) @PageableDefault(sort = "createdAt") Pageable pageable) {
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(required = false, defaultValue = "10") int size) {
 
-        PageResponseDto<BookmarkResponseDto> myLikedBookmarks = myPageService.getMyLikedBookmarks(userDetails.getId(), pageable);
+        CursorResultDto<BookmarkResponseDto> myLikedBookmarks = myPageService.getMyLikedBookmarks(userDetails.getId(), cursor, size);
         return ResponseEntity.ok(myLikedBookmarks);
     }
 

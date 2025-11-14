@@ -37,25 +37,42 @@ public class CommentService {
 
     // 댓글 등록
     @Transactional
-    public void createComment(Long userId, Long bookmarkId, CommentDto.CreateRequestDto request) {
+    public CommentDto.CreateResponseDto createComment(Long userId, Long bookmarkId, CommentDto.CreateRequestDto request) {
         log.info("userId: {}, bookmarkId: {} 댓글 등록 요청", userId, bookmarkId);
         User user = userService.getUserById(userId);
         Bookmark bookmark = bookmarkService.getBookmarkById(bookmarkId);
+
+        Comment parent = null;
+        String parentAuthorNickname = null;
+        Long parentId = null;
+
+        // 답글인 경우 부모 댓글 설정
+        if (request.getParentId() != null) {
+            parent = commentRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new EntityNotFoundException("부모 댓글을 찾을 수 없습니다."));
+
+            parentAuthorNickname = parent.getUser().getProfile().getNickname();
+            parentId = parent.getId();
+        }
 
         Comment newComment = Comment.builder()
                 .user(user)
                 .bookmark(bookmark)
                 .content(request.getContent())
+                .parent(parent)
                 .build();
 
-        // 답글인 경우 부모 댓글 설정
-        if (request.getParentId() != null) {
-            Comment parent = commentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new EntityNotFoundException("부모 댓글을 찾을 수 없습니다."));
-            newComment.setParent(parent);
-        }
-
         commentRepository.save(newComment);
+
+        return CommentDto.CreateResponseDto.builder()
+                .commentId(newComment.getId())
+                .content(newComment.getContent())
+                .author(getAuthorInfo(newComment.getUser()))
+                .createdAt(newComment.getCreatedAt())
+                .replyCount(0)
+                .parentId(parentId)
+                .parentAuthorNickname(parentAuthorNickname)
+                .build();
     }
 
     // 최상위 댓글 목록 페이징 조회
@@ -82,7 +99,7 @@ public class CommentService {
 
         final Map<Long, Integer> finalReplyCountMap = replyCountMap;
 
-        // Page<CommentDto.TopLevelResponseDto> 로 변환
+        // List<CommentDto.TopLevelResponseDto> 로 변환
         List<CommentDto.TopLevelResponseDto> dtoList = comments.stream()
                 .map(comment -> CommentDto.TopLevelResponseDto.builder()
                         .commentId(comment.getId())

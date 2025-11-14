@@ -44,4 +44,17 @@ public class CommentDto {
         private String nickname;
         private String profileImageUrl;
     }
+
+    // 댓글/답글 생성 직후 반환할 DTO
+    @Data
+    @Builder
+    public static class CreateResponseDto {
+        private Long commentId;
+        private String content;
+        private AuthorInfo author;
+        private LocalDateTime createdAt;
+        private int replyCount;
+        private Long parentId;
+        private String parentAuthorNickname;
+    }
 }
