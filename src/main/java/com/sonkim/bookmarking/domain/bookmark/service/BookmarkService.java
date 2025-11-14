@@ -1,6 +1,6 @@
 package com.sonkim.bookmarking.domain.bookmark.service;
 
-import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.common.service.BookmarkCreatedEvent;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
@@ -26,8 +26,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +54,7 @@ public class BookmarkService {
 
     // 북마크 등록
     @Transactional
-    public Bookmark createBookmark(Long userId, Long teamId, BookmarkRequestDto request) {
+    public BookmarkResponseDto createBookmark(Long userId, Long teamId, BookmarkRequestDto request) {
         // 그룹 상태 검증
         teamService.validateGroupIsActive(teamId);
 
@@ -105,10 +103,11 @@ public class BookmarkService {
 
         bookmarkRepository.save(bookmark);
 
+        List<Tag> tags = new ArrayList<>();
         List<String> tagNames = request.getTagNames();
         if (tagNames != null && !tagNames.isEmpty()) {
             // TagService를 통해 Tag 엔티티들 가져오기
-            List<Tag> tags = tagService.findOrCreateTags(userId, teamId, tagNames);
+            tags = tagService.findOrCreateTags(userId, teamId, tagNames);
 
             // BookmarkTag 연결 엔티티 생성
             List<BookmarkTag> newBookmarkTags = new ArrayList<>();
@@ -123,7 +122,18 @@ public class BookmarkService {
             eventPublisher.publishEvent(new BookmarkCreatedEvent(bookmark.getId(), originalImageUrl));
         }
 
-        return bookmark;
+        // 반환용 DTO 생성
+        long likesCount = 0L;
+        boolean isLiked = false;
+        List<BookmarkResponseDto.TagInfo> tagInfos = tags.stream()
+                .map(tag -> new BookmarkResponseDto.TagInfo(tag.getId(), tag.getName()))
+                .toList();
+
+        BookmarkResponseDto responseDto = BookmarkResponseDto.from(bookmark, isLiked, likesCount, tagInfos);
+        String finalImageUrl = getFinalImageUrl(bookmark);
+        responseDto.setImageUrl(finalImageUrl);
+
+        return responseDto;
     }
 
     // 특정 북마크 조회
@@ -258,20 +268,31 @@ public class BookmarkService {
 
     // 북마크 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> searchBookmarks(
-            Long userId, Long teamId, BookmarkSearchCond cond, Pageable pageable
+    public CursorResultDto<BookmarkResponseDto> searchBookmarks(
+            Long userId, Long teamId, BookmarkSearchCond cond, Long cursorId, int size
     ) {
         // QueryDSL을 사용한 단일 리포지토리 메소드를 통해 검색
-        Page<Bookmark> bookmarks = bookmarkRepository.search(teamId, cond, pageable);
+        List<Bookmark> bookmarks = bookmarkRepository.search(teamId, cond, cursorId, size + 1);
 
-        return enrichBookmarksWithDetails(bookmarks, userId);
+        // 다음 페이지 존재 여부 확인
+        boolean hasNext = false;
+        if (bookmarks.size() > size) {
+            hasNext = true;
+            bookmarks.remove(size);
+        }
+
+        // 부가 정보 채우고, 다음 커서 설정 후 반환
+        List<BookmarkResponseDto> dtoList = enrichBookmarksWithDetails(bookmarks, userId);
+        Long nextCursor = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getBookmarkId();
+        return new CursorResultDto<>(dtoList, nextCursor, hasNext);
     }
 
     // 추가 정보 채우기
-    public PageResponseDto<BookmarkResponseDto> enrichBookmarksWithDetails(Page<Bookmark> bookmarks, Long userId) {
-        List<Long> bookmarkIds = bookmarks.getContent().stream().map(Bookmark::getId).toList();
-
-        log.info("bookmarkIds : " + bookmarkIds);
+    public List<BookmarkResponseDto> enrichBookmarksWithDetails(List<Bookmark> bookmarks, Long userId) {
+        List<Long> bookmarkIds = bookmarks.stream().map(Bookmark::getId).toList();
+        if (bookmarkIds.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         // 좋아요 개수, 좋아요 여부, 태그 정보 전부 다 가져오기
         Map<Long, Long> likesCountMap = bookmarkLikeRepository.findLikesCountForBookmarks(bookmarkIds)
@@ -290,8 +311,8 @@ public class BookmarkService {
                         )
                 ));
 
-        // 데이터 조합
-        Page<BookmarkResponseDto> dtoPage = bookmarks.map(bookmark -> {
+        // 데이터 조합 후 반환
+        return bookmarks.stream().map(bookmark -> {
             long likesCount = likesCountMap.getOrDefault(bookmark.getId(), 0L);
             boolean isLiked = likedBookmarkIds.contains(bookmark.getId());
             List<BookmarkResponseDto.TagInfo> tags = tagsMap.getOrDefault(bookmark.getId(), Collections.emptyList());
@@ -301,9 +322,7 @@ public class BookmarkService {
             String finalImageUrl = getFinalImageUrl(bookmark);
             dto.setImageUrl(finalImageUrl);
             return dto;
-        });
-
-        return new PageResponseDto<>(dtoPage);
+        }).toList();
     }
 
     private String getFinalImageUrl(Bookmark bookmark) {

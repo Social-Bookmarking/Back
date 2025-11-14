@@ -1,9 +1,10 @@
 package com.sonkim.bookmarking.domain.mypage.service;
 
-import com.sonkim.bookmarking.common.dto.PageResponseDto;
+import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.common.exception.OwnershipTransferRequiredException;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.LikedBookmarkWrapper;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
@@ -21,11 +22,9 @@ import com.sonkim.bookmarking.domain.user.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -120,18 +119,40 @@ public class MyPageService {
 
     // 사용자가 작성한 북마크 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getMyBookmarks(Long userId, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findAllByUser_Id(userId, pageable);
+    public CursorResultDto<BookmarkResponseDto> getMyBookmarks(Long userId, Long cursorId, int size) {
+        List<Bookmark> bookmarks = bookmarkRepository.findMyBookmarksByUser_Id(userId, cursorId, size + 1);
 
-        return bookmarkService.enrichBookmarksWithDetails(bookmarks, userId);
+        boolean hasNext = bookmarks.size() > size;
+        if (hasNext) {
+            bookmarks.remove(size);
+        }
+
+        List<BookmarkResponseDto> dtoList = bookmarkService.enrichBookmarksWithDetails(bookmarks, userId);
+
+        Long nextCursor = bookmarks.isEmpty() ? null : bookmarks.get(bookmarks.size() - 1).getId();
+
+        return new CursorResultDto<>(dtoList, nextCursor, hasNext);
     }
 
     // 사용자가 좋아요를 누른 북마크 조회
     @Transactional(readOnly = true)
-    public PageResponseDto<BookmarkResponseDto> getMyLikedBookmarks(Long userId, Pageable pageable) {
-        Page<Bookmark> bookmarks = bookmarkRepository.findLikedBookmarksByUser_Id(userId, pageable);
+    public CursorResultDto<BookmarkResponseDto> getMyLikedBookmarks(Long userId, Long cursorId, int size) {
+        List<LikedBookmarkWrapper> wrappers = bookmarkRepository.findLikedBookmarksByUser_Id(userId, cursorId, size + 1);
 
-        return bookmarkService.enrichBookmarksWithDetails(bookmarks, userId);
+        boolean hasNext = wrappers.size() > size;
+        if (hasNext) {
+            wrappers.remove(size);
+        }
+
+        List<Bookmark> bookmarks = wrappers.stream()
+                .map(LikedBookmarkWrapper::getBookmark)
+                .toList();
+
+        List<BookmarkResponseDto> dtoList = bookmarkService.enrichBookmarksWithDetails(bookmarks, userId);
+
+        Long nextCursor = wrappers.isEmpty() ? null : wrappers.get(wrappers.size() - 1).getBookmarkLikeId();
+
+        return new CursorResultDto<>(dtoList, nextCursor, hasNext);
     }
 
     // 탈퇴 처리

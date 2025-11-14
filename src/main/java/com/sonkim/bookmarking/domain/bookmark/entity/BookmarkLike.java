@@ -25,5 +25,4 @@ public class BookmarkLike {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bookmark_id", nullable = false)
     private Bookmark bookmark;
-
 }
