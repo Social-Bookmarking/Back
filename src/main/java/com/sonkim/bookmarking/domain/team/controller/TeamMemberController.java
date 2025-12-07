@@ -2,6 +2,7 @@ package com.sonkim.bookmarking.domain.team.controller;
 
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.domain.team.dto.TeamMemberDto;
+import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,6 +33,19 @@ public class TeamMemberController {
 
         return ResponseEntity.ok(members);
     }
+
+    @Operation(summary = "그룹 내 자신의 권한 조회", description = "로그인한 사용자의 특정 그룹에서의 권한을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "역할 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "그룹을 찾을 수 없음")
+    })
+    @GetMapping("/{groupId}/permission")
+    public ResponseEntity<TeamMemberDto.GetPermissionResponseDto> getMemberPermission(@AuthenticationPrincipal UserDetailsImpl userDetails,
+                                                                                      @PathVariable("groupId") Long groupId) {
+        Permission permission = teamMemberService.getUserPermissionInTeam(userDetails.getId(), groupId);
+        return ResponseEntity.ok().body(TeamMemberDto.GetPermissionResponseDto.builder().permission(permission).build());
+    }
+
 
     @Operation(summary = "멤버 역할 수정", description = "그룹 멤버의 역할을 변경합니다. ADMIN 권한이 필요합니다.")
     @ApiResponses({

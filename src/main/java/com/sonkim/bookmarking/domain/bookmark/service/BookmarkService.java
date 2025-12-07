@@ -80,8 +80,7 @@ public class BookmarkService {
         if (request.getImageKey() != null && !request.getImageKey().isEmpty()) {
             // 사용자가 직접 이미지를 업로드한 경우
             // 파일을 temp -> bookmarks로 이동
-            s3Service.moveFileToPermanentStorage("bookmarks/", request.getImageKey());
-            imageKey = request.getImageKey();
+            imageKey = s3Service.moveFileToPermanentStorage("bookmarks/", request.getImageKey());
         } else if (request.getOriginalImageUrl() != null && !request.getOriginalImageUrl().isEmpty()) {
             // OG 이미지 그대로 사용하는 경우
             // 임시 저장 후 비동기 처리 요청
@@ -198,8 +197,8 @@ public class BookmarkService {
                 }
             } else {
                 // 이미지를 변경하려는 경우
-                s3Service.moveFileToPermanentStorage("bookmarks/", dto.getImageKey());
-                bookmark.updateImageKey(dto.getImageKey());
+                String newImageKey = s3Service.moveFileToPermanentStorage("bookmarks/", dto.getImageKey());
+                bookmark.updateImageKey(newImageKey);
                 if (oldImageKey != null) {
                     s3Service.deleteFile("bookmarks/", oldImageKey);
                 }

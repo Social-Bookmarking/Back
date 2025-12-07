@@ -21,4 +21,11 @@ public class TeamMemberDto {
     public static class UpdatePermissionRequestDto {
         private Permission permission;
     }
+
+    // 멤버 역할 조회 응답용 DTO
+    @Data
+    @Builder
+    public static class GetPermissionResponseDto {
+        private Permission permission;
+    }
 }

@@ -8,6 +8,7 @@ import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.repository.TeamMemberRepository;
 import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
+import com.sonkim.bookmarking.domain.user.enums.UserStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -112,6 +113,11 @@ public class TeamMemberService {
         // 역할을 변경할 유저 정보 가져오기
         TeamMember member = teamMemberRepository.getTeamMemberByUser_IdAndTeam_Id(memberId, teamId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저 혹은 그룹을 찾을 수 없습니다. memberId: " + memberId + ", teamId: " + teamId));
+
+        // 대상 멤버가 탈퇴한 사용자이면 변경 불가
+        if (member.getUser().getUserStatus() != UserStatus.ACTIVE) {
+            throw new IllegalStateException("탈퇴한 사용자의 권한은 변경할 수 없습니다.");
+        }
 
         // 역할 업데이트
         member.updatePermission(dto.getPermission());
