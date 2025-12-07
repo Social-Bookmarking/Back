@@ -5,7 +5,6 @@ import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.entity.TeamMember;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.enums.TeamStatus;
-import com.sonkim.bookmarking.domain.team.repository.TeamMemberRepository;
 import com.sonkim.bookmarking.domain.team.repository.TeamRepository;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.enums.UserStatus;
@@ -201,12 +200,14 @@ public class TeamService {
     @Transactional
     public void scheduleTeamDeletion(Long userId, Long teamId) {
         log.info("userId: {}, teamId: {} 그룹 삭제 요청", userId, teamId);
+        Team team = getTeamById(teamId);
 
-        // ADMIN 권한 확인
-        teamMemberService.validateAdmin(userId, teamId);
+        // 소유자 확인
+        if (!team.getOwner().getId().equals(userId)) {
+            throw new AuthorizationDeniedException("그룹 삭제는 소유자만 가능합니다.");
+        }
 
         // 그룹 삭제 요청
-        Team team = getTeamById(teamId);
         team.scheduleDeletion();
     }
 
@@ -214,12 +215,14 @@ public class TeamService {
     @Transactional
     public void cancelTeamDeletion(Long userId, Long teamId) {
         log.info("userId: {}, teamId: {} 그룹 삭제 취소 요청", userId, teamId);
+        Team team = getTeamById(teamId);
 
         // ADMIN 권한 확인
-        teamMemberService.validateAdmin(userId, teamId);
+        if (!team.getOwner().getId().equals(userId)) {
+            throw new AuthorizationDeniedException("그룹 삭제 취소는 소유자만 가능합니다.");
+        }
 
         // 그룹 삭제 취소 요청
-        Team team = getTeamById(teamId);
         team.cancelDeletion();
     }
 

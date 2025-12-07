@@ -80,8 +80,8 @@ public class MyPageService {
                 user.getProfile().updateImageKey(null);
             } else {
                 // 이미지를 새로 변경하려는 경우
-                s3Service.moveFileToPermanentStorage("profile-images/", newImageKey);
-                user.getProfile().updateImageKey(newImageKey);
+                String finalImageKey = s3Service.moveFileToPermanentStorage("profile-images/", newImageKey);
+                user.getProfile().updateImageKey(finalImageKey);
             }
             if (oldImageKey != null) {
                 s3Service.deleteFile("profile-images/", oldImageKey);
