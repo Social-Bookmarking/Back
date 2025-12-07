@@ -1,5 +1,7 @@
 package com.sonkim.bookmarking.common.service;
 
+import com.sksamuel.scrimage.ImmutableImage;
+import com.sksamuel.scrimage.webp.WebpWriter;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
@@ -12,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.io.InputStream;
 import java.net.URL;
 import java.util.Optional;
 
@@ -42,24 +43,33 @@ public class ImageProcessingService {
         }
 
         try {
-            // S3에 업로드 후 파일 키 수령
-            String fileKey;
-            try (InputStream in = new URL(imageUrl).openStream()) {
-                // URL에서 이미지를 byte[]로 읽어옴
-                byte[] imageBytes = in.readAllBytes();
+            // 이미지 다운로드 및 로딩
+            ImmutableImage image = ImmutableImage.loader().fromUrl(new URL(imageUrl));
 
-                // 파일 이름 추출
-                String fileNameWithQuery = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
-                int queryIndex = fileNameWithQuery.indexOf('?');
-                String originalFileName = (queryIndex != -1) ? fileNameWithQuery.substring(0, queryIndex) : fileNameWithQuery;
-
-                // S3에 업로드하고 fileKey 반환
-                fileKey = s3Service.uploadImageBytes(imageBytes, originalFileName, "bookmarks/");
+            // 리사이징
+            if (image.width > 600) {
+                image = image.scaleToWidth(600);
             }
 
-            // 해당 북마크 이미지 url 수정
-            Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(bookmarkId);
+            // webP로 변환
+            byte[] webpImageBytes = image.bytes(WebpWriter.DEFAULT.withQ(80));
 
+            // 파일 이름 생성 및 S3 업로드
+            String originalFileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+            int queryIndex = imageUrl.lastIndexOf('?');
+            if (queryIndex != -1) {
+                originalFileName = originalFileName.substring(0, queryIndex);
+            }
+
+            String fileNameWithoutExt = originalFileName.contains(".")
+                    ? originalFileName.substring(0, originalFileName.lastIndexOf("."))
+                    : originalFileName;
+            String webpFileName = fileNameWithoutExt + ".webp";
+
+            String fileKey = s3Service.uploadImageBytes(webpImageBytes, webpFileName, "bookmarks/");
+
+            // DB 업데이트
+            Optional<Bookmark> bookmarkOptional = bookmarkRepository.findById(bookmarkId);
             if (bookmarkOptional.isPresent()) {
                 Bookmark bookmark = bookmarkOptional.get();
                 bookmark.updateImageKey(fileKey);
