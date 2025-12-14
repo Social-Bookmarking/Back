@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -43,7 +44,7 @@ public class CategoryController {
     @PostMapping("/groups/{groupId}/categories")
     public ResponseEntity<List<CategoryDto.CategoryResponseDto>> createCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("groupId") Long groupId,
-                                            @RequestBody CategoryDto.CategoryRequestDto request) {
+                                            @RequestBody @Valid CategoryDto.CategoryRequestDto request) {
         List<CategoryDto.CategoryResponseDto> updatedCategories = categoryService.createCategory(userDetails.getId(), groupId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(updatedCategories);
     }
@@ -57,7 +58,7 @@ public class CategoryController {
     @PatchMapping("/categories/{categoryId}")
     public ResponseEntity<List<CategoryDto.CategoryResponseDto>> updateCategory(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("categoryId") Long categoryId,
-                                            @RequestBody CategoryDto.CategoryRequestDto request) {
+                                            @RequestBody @Valid CategoryDto.CategoryRequestDto request) {
         List<CategoryDto.CategoryResponseDto> updatedCategories = categoryService.updateCategory(userDetails.getId(), categoryId, request);
         return ResponseEntity.ok(updatedCategories);
     }
@@ -81,9 +82,9 @@ public class CategoryController {
     public ResponseEntity<Void> updateCategoryPositions(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long groupId,
-            @RequestBody List<CategoryDto.UpdatePositionRequestDto> requests
+            @RequestBody @Valid CategoryDto.CategoryOrderUpdateRequest requests
     ) {
-        categoryService.updateCategoryPositions(userDetails.getId(), groupId, requests);
+        categoryService.updateCategoryPositions(userDetails.getId(), groupId, requests.getCategories());
         return ResponseEntity.ok().build();
     }
 }

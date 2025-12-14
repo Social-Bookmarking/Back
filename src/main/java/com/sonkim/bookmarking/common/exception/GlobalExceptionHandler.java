@@ -6,7 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -14,6 +16,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Hidden
@@ -61,6 +64,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleNoResourceFoundException(NoResourceFoundException e) {
         log.warn("404(NOT_FOUND) 에러 발생 : {}", e.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    // MethodArgumentNotValidException 처리
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        BindingResult bindingResult = e.getBindingResult();
+
+        // 에러 메시지 가공: "필드명: 에러내용, 필드명: 에러내용"
+        String errorMessage = bindingResult.getFieldErrors().stream()
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("400(BAD_REQUEST) 유효성 검사 실패: {}", errorMessage);
+
+        return buildResponse(HttpStatus.BAD_REQUEST, errorMessage);
     }
 
     // '좋아요' 중복 에러 처리

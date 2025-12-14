@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class TeamController {
     @PostMapping
     @Idempotent
     public ResponseEntity<TeamDto.CreateResponseDto> createTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                        @RequestBody TeamDto.TeamRequestDto createDto) {
+                                        @RequestBody @Valid TeamDto.TeamRequestDto createDto) {
         Team newTeam = teamService.createTeam(userDetails.getId(), createDto);
 
         TeamDto.CreateResponseDto response = TeamDto.CreateResponseDto.builder()
@@ -67,7 +68,7 @@ public class TeamController {
     })
     @PatchMapping("/{groupId}")
     public ResponseEntity<Void> updateTeam(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                        @RequestBody TeamDto.TeamRequestDto updateDto,
+                                        @RequestBody @Valid TeamDto.TeamRequestDto updateDto,
                                         @PathVariable("groupId") Long groupId) {
         teamService.updateTeam(userDetails.getId(), groupId, updateDto);
         return ResponseEntity.ok().build();
@@ -108,7 +109,7 @@ public class TeamController {
     })
     @PostMapping("/join")
     public ResponseEntity<Void> joinTeamMember(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                            @RequestBody TeamDto.JoinRequestDto joinRequestDto) {
+                                            @RequestBody @Valid TeamDto.JoinRequestDto joinRequestDto) {
         teamService.joinTeam(userDetails.getId(), joinRequestDto.getInviteCode());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -194,7 +195,7 @@ public class TeamController {
     public ResponseEntity<Void> transferOwnership(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Parameter(description = "소유권을 이전할 그룹 ID") @PathVariable Long groupId,
-            @RequestBody TeamDto.OwnerTransferDto transferDto)
+            @RequestBody @Valid TeamDto.OwnerTransferDto transferDto)
     {
         teamService.transferOwnership(userDetails.getId(), transferDto.getNewOwnerId(), groupId);
         return ResponseEntity.ok().build();

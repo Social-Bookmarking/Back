@@ -105,6 +105,9 @@ public class TagService {
         List<Tag> newTags = new ArrayList<>();
         if (!newTagNames.isEmpty()) {
             for (String newTagName : newTagNames) {
+                if (newTagName.length() > 20)
+                    throw new IllegalArgumentException("태그는 20자를 초과할 수 없습니다.: " + newTagName);
+
                 newTags.add(Tag.builder().team(team).name(newTagName).build());
             }
 
