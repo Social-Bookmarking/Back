@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class CommentController {
     public ResponseEntity<CommentDto.CreateResponseDto> createComment(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @Parameter(description = "댓글/답글을 작성할 북마크 ID") @PathVariable("bookmarkId") Long bookmarkId,
-            @RequestBody CommentDto.CreateRequestDto request) {
+            @RequestBody @Valid CommentDto.CreateRequestDto request) {
         CommentDto.CreateResponseDto newCommentDto = commentService.createComment(userDetails.getId(), bookmarkId, request);
         return ResponseEntity.status(201).body(newCommentDto);
     }

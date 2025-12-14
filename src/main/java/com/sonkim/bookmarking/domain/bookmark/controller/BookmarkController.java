@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,7 @@ public class BookmarkController {
     @PatchMapping("/{bookmarkId}")
     public ResponseEntity<String> updateBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("bookmarkId") Long bookmarkId,
-                                            @RequestBody BookmarkRequestDto bookmarkRequestDto) {
+                                            @RequestBody @Valid BookmarkRequestDto bookmarkRequestDto) {
         log.info("userId: {}, bookmarkId: {} 북마크 수정 요청", userDetails.getId(), bookmarkId);
         bookmarkService.updateBookmark(userDetails.getId(), bookmarkId, bookmarkRequestDto);
         return ResponseEntity.ok("bookmarkId: " + bookmarkId + " updated");

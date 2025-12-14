@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -42,7 +43,7 @@ public class TagController {
     @PostMapping("/groups/{groupId}/tags")
     public ResponseEntity<Void> createTag(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                        @PathVariable("groupId") Long groupId,
-                                       @RequestBody TagDto.TagRequestDto request) {
+                                       @RequestBody @Valid TagDto.TagRequestDto request) {
         tagService.createTag(userDetails.getId(), groupId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

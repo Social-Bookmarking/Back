@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -56,7 +57,7 @@ public class MyPageController {
     @ApiResponse(responseCode = "200", description = "프로필 수정 성공")
     @PatchMapping("/profile")
     public ResponseEntity<Void> updateMyProfile(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                                @RequestBody MyProfileDto.UpdateRequestDto updateDto) {
+                                                @RequestBody @Valid MyProfileDto.UpdateRequestDto updateDto) {
         myPageService.updateProfile(userDetails.getId(), updateDto);
         return ResponseEntity.ok().build();
     }
@@ -68,7 +69,7 @@ public class MyPageController {
     })
     @PatchMapping("/password")
     public ResponseEntity<Void> changePassword(@AuthenticationPrincipal UserDetailsImpl userDetails,
-                                               @RequestBody PasswordDto passwordDto) {
+                                               @RequestBody @Valid PasswordDto passwordDto) {
         myPageService.changePassword(userDetails.getId(), passwordDto);
         return ResponseEntity.ok().build();
     }

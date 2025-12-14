@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -57,7 +58,7 @@ public class TeamMemberController {
     public ResponseEntity<Void> updateMemberPermission(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                                     @PathVariable("groupId") Long groupId,
                                                     @PathVariable("memberId") Long memberId,
-                                                    @RequestBody TeamMemberDto.UpdatePermissionRequestDto dto) {
+                                                    @RequestBody @Valid TeamMemberDto.UpdatePermissionRequestDto dto) {
         teamMemberService.updateMemberPermission(userDetails.getId(), groupId, memberId, dto);
         return ResponseEntity.ok().build();
     }

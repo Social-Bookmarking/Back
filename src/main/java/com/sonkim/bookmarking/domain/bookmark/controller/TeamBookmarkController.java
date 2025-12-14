@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,7 @@ public class TeamBookmarkController {
     @Idempotent
     public ResponseEntity<BookmarkResponseDto> createBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable Long groupId,
-                                            @RequestBody BookmarkRequestDto bookmarkRequestDto) {
+                                            @RequestBody @Valid BookmarkRequestDto bookmarkRequestDto) {
         log.info("userId: {}, url: {} 북마크 생성 요청", userDetails.getId(), bookmarkRequestDto.getUrl());
         BookmarkResponseDto responseDto = bookmarkService.createBookmark(userDetails.getId(), groupId, bookmarkRequestDto);
 
