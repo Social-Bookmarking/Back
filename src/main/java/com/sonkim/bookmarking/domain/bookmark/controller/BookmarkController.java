@@ -3,8 +3,8 @@ package com.sonkim.bookmarking.domain.bookmark.controller;
 import com.sonkim.bookmarking.auth.entity.UserDetailsImpl;
 import com.sonkim.bookmarking.common.s3.dto.PresignedUrlDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkUpdateDto;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkOGDto;
 import com.sonkim.bookmarking.common.util.OGUtil;
@@ -53,7 +53,7 @@ public class BookmarkController {
     @PatchMapping("/{bookmarkId}")
     public ResponseEntity<String> updateBookmark(@AuthenticationPrincipal UserDetailsImpl userDetails,
                                             @PathVariable("bookmarkId") Long bookmarkId,
-                                            @RequestBody @Valid BookmarkRequestDto bookmarkRequestDto) {
+                                            @RequestBody @Valid BookmarkUpdateDto bookmarkRequestDto) {
         log.info("userId: {}, bookmarkId: {} 북마크 수정 요청", userDetails.getId(), bookmarkId);
         bookmarkService.updateBookmark(userDetails.getId(), bookmarkId, bookmarkRequestDto);
         return ResponseEntity.ok("bookmarkId: " + bookmarkId + " updated");

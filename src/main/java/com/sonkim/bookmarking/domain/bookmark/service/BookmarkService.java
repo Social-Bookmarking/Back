@@ -3,9 +3,7 @@ package com.sonkim.bookmarking.domain.bookmark.service;
 import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
 import com.sonkim.bookmarking.common.service.BookmarkCreatedEvent;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkSearchCond;
-import com.sonkim.bookmarking.domain.bookmark.dto.LikeCountDto;
+import com.sonkim.bookmarking.domain.bookmark.dto.*;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkTagRepository;
@@ -14,7 +12,6 @@ import com.sonkim.bookmarking.domain.tag.entity.Tag;
 import com.sonkim.bookmarking.domain.tag.service.TagService;
 import com.sonkim.bookmarking.domain.user.entity.User;
 import com.sonkim.bookmarking.domain.user.service.UserService;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkRepository;
 import com.sonkim.bookmarking.domain.category.service.CategoryService;
@@ -168,7 +165,7 @@ public class BookmarkService {
 
     // 북마크 정보 갱신
     @Transactional
-    public void updateBookmark(Long userId, Long bookmarkId, BookmarkRequestDto dto) {
+    public void updateBookmark(Long userId, Long bookmarkId, BookmarkUpdateDto dto) {
         Bookmark bookmark = getBookmarkById(bookmarkId);
 
         // 그룹 상태 검증

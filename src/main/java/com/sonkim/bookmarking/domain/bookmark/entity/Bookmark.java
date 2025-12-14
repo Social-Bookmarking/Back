@@ -1,7 +1,7 @@
 package com.sonkim.bookmarking.domain.bookmark.entity;
 
+import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkUpdateDto;
 import com.sonkim.bookmarking.domain.user.entity.User;
-import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkRequestDto;
 import com.sonkim.bookmarking.domain.category.entity.Category;
 import com.sonkim.bookmarking.domain.team.entity.Team;
 import jakarta.persistence.*;
@@ -54,7 +54,6 @@ public class Bookmark {
     private String originalImageUrl;
 
     // 최종 이미지 파일 키
-    @Column(length = 255)
     private String imageKey;
 
     private Double latitude;        // 위도
@@ -84,7 +83,7 @@ public class Bookmark {
         this.category = category;
     }
 
-    public void update(BookmarkRequestDto dto) {
+    public void update(BookmarkUpdateDto dto) {
         if(dto.getTitle() != null) this.title = dto.getTitle();
         if(dto.getDescription() != null) this.description = dto.getDescription();
         if(dto.getLatitude() != null) {
