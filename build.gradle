@@ -78,6 +78,9 @@ dependencies {
 	// image 리사이징 및 변환
 	implementation "com.sksamuel.scrimage:scrimage-core:4.3.5"
 	implementation "com.sksamuel.scrimage:scrimage-webp:4.3.5"
+
+	// AWS Lambda 호출
+	implementation 'software.amazon.awssdk:lambda:2.40.7'
 }
 
 // Q-Class를 생성할 디렉토리 경로
