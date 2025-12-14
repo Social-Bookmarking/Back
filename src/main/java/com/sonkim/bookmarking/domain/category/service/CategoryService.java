@@ -148,12 +148,17 @@ public class CategoryService {
         // 각 카테고리의 position 값 업데이트
         for (CategoryDto.UpdatePositionRequestDto request : requests) {
             Category category = categoryMap.get(request.getCategoryId());
+
+            if (category == null) {
+                throw new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다. categoryId:" + request.getCategoryId());
+            }
+
             category.updatePosition(request.getPosition());
         }
     }
 
     public Category getCategoryById(Long categoryId) {
         return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다."));
+                .orElseThrow(() -> new EntityNotFoundException("해당 카테고리를 찾을 수 없습니다. categoryId:" + categoryId));
     }
 }
