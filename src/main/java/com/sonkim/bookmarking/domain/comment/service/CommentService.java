@@ -216,7 +216,7 @@ public class CommentService {
         String imageKey = user.getProfile().getImageKey();
 
         if (imageKey != null && !imageKey.isBlank()) {
-            imageUrl = s3Service.generatePresignedGetUrl("profile-images/", imageKey).toString();
+            imageUrl = s3Service.generateImageUrl("profile-images/", imageKey);
         }
 
         return CommentDto.AuthorInfo.builder()

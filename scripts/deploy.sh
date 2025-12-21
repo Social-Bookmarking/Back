@@ -11,6 +11,7 @@ export AWS_ACCESS_KEY=$(aws ssm get-parameter --name "/marksphere/aws-access-key
 export AWS_SECRET_KEY=$(aws ssm get-parameter --name "/marksphere/aws-secret-key" --with-decryption --query "Parameter.Value" --output text)
 export REDIS_HOST=$(aws ssm get-parameter --name "/marksphere/redis-host" --with-decryption --query "Parameter.Value" --output text)
 export LAMBDA_FUNCTION_NAME=$(aws ssm get-parameter --name "/marksphere/lambda-function-name" --with-decryption --query "Parameter.Value" --output text)
+export AWS_CLOUDFRONT_DOMAIN=$(aws ssm get-parameter --name "/marksphere/aws-cloudfront-domain" --with-decryption --query "Parameter.Value" --output text)
 
 JAR_NAME=$(ls $REPOSITORY/build/libs/ | grep '.jar' | tail -n 1)
 JAR_PATH=$REPOSITORY/build/libs/$JAR_NAME
