@@ -78,7 +78,7 @@ public class TeamMemberService {
                     String imageUrl = null;
                     String imageKey = member.getUser().getProfile().getImageKey();
                     if (imageKey != null && !imageKey.isBlank()) {
-                        imageUrl = s3Service.generatePresignedGetUrl("profile-images/", member.getUser().getProfile().getImageKey()).toString();
+                        imageUrl = s3Service.generateImageUrl("profile-images/", member.getUser().getProfile().getImageKey());
                     }
 
                     return TeamMemberDto.MemberResponseDto.builder()

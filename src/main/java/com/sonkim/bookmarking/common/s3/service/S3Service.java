@@ -12,15 +12,13 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +37,9 @@ public class S3Service {
     @Value("${aws.lambda.function-name}")
     private String lambdaFunctionName;
 
+    @Value("${aws.cloudfront.domain}")
+    private String cloudFrontDomain;
+
     public S3Service(S3Client s3Client, @Value("${aws.s3.bucket-name}") String bucketName, S3Presigner s3Presigner, LambdaClient lambdaClient, ObjectMapper objectMapper) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
@@ -47,19 +48,16 @@ public class S3Service {
         this.objectMapper = objectMapper;
     }
 
-    public URL generatePresignedGetUrl(String prefix, String key) {
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(prefix + key)
-                .build();
+    public String generateImageUrl(String prefix, String key) {
+        try {
+            String encodedKey = URLEncoder.encode(key, StandardCharsets.UTF_8)
+                    .replace("+", "%20");
 
-        GetObjectPresignRequest getObjectPresignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(10))
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(getObjectPresignRequest);
-        return presignedGetObjectRequest.url();
+            return cloudFrontDomain + "/" + prefix + encodedKey;
+        } catch (Exception e) {
+            log.error("Failed to encode key: {}", key, e);
+            return cloudFrontDomain + "/" + prefix + key;
+        }
     }
 
     public PresignedUrlDto generatePresignedPutUrl(String fileName) {

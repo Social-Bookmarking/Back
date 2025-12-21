@@ -323,7 +323,7 @@ public class BookmarkService {
 
     private String getFinalImageUrl(Bookmark bookmark) {
         if (bookmark.getImageKey() != null) {
-            return s3Service.generatePresignedGetUrl("bookmarks/", bookmark.getImageKey()).toString();
+            return s3Service.generateImageUrl("bookmarks/", bookmark.getImageKey());
         } else if (bookmark.getOriginalImageUrl() != null) {
             return bookmark.getOriginalImageUrl();
         }
