@@ -2,6 +2,7 @@ package com.sonkim.bookmarking.domain.team.dto;
 
 import com.sonkim.bookmarking.domain.team.enums.TeamStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
@@ -65,7 +66,7 @@ public class TeamDto {
     // 그룹 소유주 이전
     @Data
     public static class OwnerTransferDto {
-        @NotBlank(message = "새로운 소유주 ID는 필수입니다.")
+        @NotNull(message = "새로운 소유주 ID는 필수입니다.")
         private Long newOwnerId;
     }
 }

@@ -82,9 +82,9 @@ public class CategoryController {
     public ResponseEntity<Void> updateCategoryPositions(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable Long groupId,
-            @RequestBody @Valid CategoryDto.CategoryOrderUpdateRequest requests
+            @RequestBody List<CategoryDto.UpdatePositionRequestDto> requests
     ) {
-        categoryService.updateCategoryPositions(userDetails.getId(), groupId, requests.getCategories());
+        categoryService.updateCategoryPositions(userDetails.getId(), groupId, requests);
         return ResponseEntity.ok().build();
     }
 }
