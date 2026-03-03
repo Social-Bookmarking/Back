@@ -37,10 +37,10 @@ public class S3Service {
     @Value("${aws.lambda.function-name}")
     private String lambdaFunctionName;
 
-    @Value("${aws.cloudfront.domain}")
+    @Value("${cloudflare.cdn.domain}")
     private String cloudFrontDomain;
 
-    public S3Service(S3Client s3Client, @Value("${aws.s3.bucket-name}") String bucketName, S3Presigner s3Presigner, LambdaClient lambdaClient, ObjectMapper objectMapper) {
+    public S3Service(S3Client s3Client, @Value("${cloud.r2.bucket}") String bucketName, S3Presigner s3Presigner, LambdaClient lambdaClient, ObjectMapper objectMapper) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.s3Presigner = s3Presigner;
