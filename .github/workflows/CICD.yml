@@ -71,9 +71,9 @@ jobs:
           key: ${{ secrets.OCI_KEY }}
           script: |
             cd ~/marksphere-project
-            # [중요] docker-compose.yml 파일 내의 이미지를 GHCR 이미지로 강제 지정
             sed -i 's/build: ./image: ghcr.io\/social-bookmarking\/back:latest/' docker-compose.yml
             
+            docker-compose down
             docker-compose pull
             docker-compose up -d --force-recreate
             docker image prune -f
