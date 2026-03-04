@@ -73,7 +73,7 @@ jobs:
             cd ~/marksphere-project
             sed -i 's/build: ./image: ghcr.io\/social-bookmarking\/back:latest/' docker-compose.yml
             
-            docker-compose down
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose down
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
