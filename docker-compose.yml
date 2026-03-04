@@ -1,0 +1,48 @@
+services:
+  # 1. Redis 컨테이너 설정
+  redis:
+    image: redis:alpine
+    container_name: marksphere-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    networks:
+      - marksphere-network
+
+  selenium:
+    image: selenium/standalone-chromium:latest
+    container_name: marksphere-selenium
+    shm_size: '2gb'
+    environment:
+      - SE_NODE_MAX_SESSIONS=5
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+      - SE_SESSION_REQUEST_TIMEOUT=60
+    ports:
+      - "4444:4444"
+    networks:
+      - marksphere-network
+
+  # 2. Spring Boot 애플리케이션 설정
+  marksphere-app:
+    build: .
+    container_name: marksphere-app
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: always
+    networks:
+      - marksphere-network
+
+# 데이터 보존을 위한 볼륨 정의
+volumes:
+  redis_data:
+
+# 컨테이너 간 통신을 위한 네트워크 정의
+networks:
+  marksphere-network:
+    driver: bridge
