@@ -49,23 +49,31 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-
     steps:
-      # 5. OCI 서버에 SSH로 접속하여 배포 명령 전달
-      - name: Deploy to OCI
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # [추가] docker-compose.yml 파일을 서버로 전송
+      - name: Copy docker-compose.yml to OCI
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USERNAME }}
+          key: ${{ secrets.OCI_KEY }}
+          source: "docker-compose.yml"
+          target: "~/marksphere-project"
+
+      - name: Deploy to OCI via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USERNAME }}
           key: ${{ secrets.OCI_KEY }}
           script: |
-            cd ~/marksphere-project # 프로젝트 폴더 경로로 이동
+            cd ~/marksphere-project
+            # [중요] docker-compose.yml 파일 내의 이미지를 GHCR 이미지로 강제 지정
+            sed -i 's/build: ./image: ghcr.io\/social-bookmarking\/back:latest/' docker-compose.yml
             
-            # 새 이미지 가져오기
             docker-compose pull
-            
-            # 컨테이너 재시작 (변경사항 반영)
             docker-compose up -d --force-recreate
-            
-            # 사용하지 않는 오래된 이미지 정리 (용량 관리)
             docker image prune -f
