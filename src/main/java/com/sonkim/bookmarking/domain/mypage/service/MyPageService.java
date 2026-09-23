@@ -3,6 +3,10 @@ package com.sonkim.bookmarking.domain.mypage.service;
 import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.common.exception.OwnershipTransferRequiredException;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
+import com.sonkim.bookmarking.common.s3.service.S3FileDeletionRequestedEvent;
+import com.sonkim.bookmarking.common.service.ImageProcessingJob;
+import com.sonkim.bookmarking.common.service.ImageProcessingJobCreatedEvent;
+import com.sonkim.bookmarking.common.service.ImageProcessingJobRepository;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkResponseDto;
 import com.sonkim.bookmarking.domain.bookmark.dto.LikedBookmarkWrapper;
 import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
@@ -25,8 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -43,6 +49,8 @@ public class MyPageService {
     private final ProfileService profileService;
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final ImageProcessingJobRepository imageProcessingJobRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public MyProfileDto.MyProfileResponseDto getMyProfile(Long userId) {
@@ -78,22 +86,29 @@ public class MyPageService {
             if (newImageKey.isEmpty()) {
                 // 이미지 키가 공백으로 전달된 경우 프로필 이미지 삭제
                 user.getProfile().updateImageKey(null);
+                user.getProfile().updatePendingImageKey(null);
             } else {
                 // 이미지를 새로 변경하려는 경우
-                String finalImageKey = s3Service.moveFileToPermanentStorage("profile-images/", newImageKey);
-                user.getProfile().updateImageKey(finalImageKey);
+                s3Service.verifyUploadedFile(newImageKey);
+                user.getProfile().updatePendingImageKey(newImageKey);
+                ImageProcessingJob job = imageProcessingJobRepository.save(new ImageProcessingJob(
+                        ImageProcessingJob.TargetType.PROFILE, user.getProfile().getId(), newImageKey));
+                eventPublisher.publishEvent(new ImageProcessingJobCreatedEvent(job.getId()));
             }
-            if (oldImageKey != null) {
-                s3Service.deleteFile("profile-images/", oldImageKey);
+            if (newImageKey.isEmpty() && oldImageKey != null) {
+                eventPublisher.publishEvent(
+                        new S3FileDeletionRequestedEvent("profile-images/", oldImageKey));
             }
         }
 
         String nickname = updateRequestDto.getNickname();
         if (nickname != null) {
-            if (profileService.nicknameExists(nickname)) {
-                throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+            if (!Objects.equals(user.getProfile().getNickname(), nickname)) {
+                if (profileService.nicknameExists(nickname)) {
+                    throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+                }
+                user.getProfile().updateNickname(nickname);
             }
-            user.getProfile().updateNickname(nickname);
         }
     }
 

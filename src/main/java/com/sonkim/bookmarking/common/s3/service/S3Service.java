@@ -7,11 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.lambda.model.InvokeRequest;
 import software.amazon.awssdk.services.lambda.model.InvokeResponse;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -27,6 +28,14 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class S3Service {
+
+    static final long MAX_UPLOAD_SIZE_BYTES = 10L * 1024 * 1024;
+    private static final Map<String, String> ALLOWED_UPLOAD_TYPES = Map.of(
+            "jpg", "image/jpeg",
+            "jpeg", "image/jpeg",
+            "png", "image/png",
+            "gif", "image/gif",
+            "webp", "image/webp");
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -50,19 +59,48 @@ public class S3Service {
 
     public String generateImageUrl(String prefix, String key) {
         try {
-            String encodedKey = URLEncoder.encode(key, StandardCharsets.UTF_8)
+            String normalizedKey = removeLeadingSlashes(key);
+            String encodedKey = URLEncoder.encode(normalizedKey, StandardCharsets.UTF_8)
                     .replace("+", "%20");
 
-            return cloudFrontDomain + "/" + prefix + encodedKey;
+            return joinImageUrl(prefix, encodedKey);
         } catch (Exception e) {
             log.error("Failed to encode key: {}", key, e);
-            return cloudFrontDomain + "/" + prefix + key;
+            return joinImageUrl(prefix, key);
         }
     }
 
+    private String joinImageUrl(String prefix, String key) {
+        String domain = removeTrailingSlashes(cloudFrontDomain);
+        String normalizedPrefix = removeSurroundingSlashes(prefix);
+        String normalizedKey = removeLeadingSlashes(key);
+        return domain + "/" + normalizedPrefix + "/" + normalizedKey;
+    }
+
+    private String removeTrailingSlashes(String value) {
+        int end = value.length();
+        while (end > 0 && value.charAt(end - 1) == '/') {
+            end--;
+        }
+        return value.substring(0, end);
+    }
+
+    private String removeLeadingSlashes(String value) {
+        int start = 0;
+        while (start < value.length() && value.charAt(start) == '/') {
+            start++;
+        }
+        return value.substring(start);
+    }
+
+    private String removeSurroundingSlashes(String value) {
+        return removeTrailingSlashes(removeLeadingSlashes(value));
+    }
+
     public PresignedUrlDto generatePresignedPutUrl(String fileName) {
-        // 파일 이름이 중복되지 않도록 UUID 사용
-        String key = UUID.randomUUID() + "_" + fileName;
+        String extension = getAllowedUploadExtension(fileName);
+        // 사용자 파일명 대신 UUID와 검증된 확장자만 객체 키에 사용한다.
+        String key = UUID.randomUUID() + "." + extension;
         String fullKey = "temp/" + key;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -84,11 +122,14 @@ public class S3Service {
     }
 
     public String moveFileToPermanentStorage(String prefix, String fileName) {
+        Map<String, String> payload = new HashMap<>();
+        payload.put("prefix", prefix);
+        payload.put("fileName", fileName);
+        return invokeImageLambda(payload);
+    }
+
+    private String invokeImageLambda(Map<String, String> payloadMap) {
         try {
-            // Lambda에 보낼 데이터 생성
-            Map<String, String> payloadMap = new HashMap<>();
-            payloadMap.put("prefix", prefix);
-            payloadMap.put("fileName", fileName);
             String jsonPayload = objectMapper.writeValueAsString(payloadMap);
 
             // Lambda 호출 요청 생성
@@ -111,8 +152,10 @@ public class S3Service {
                 throw new RuntimeException("이미지 처리 Lambda 실행 중 오류 발생: " + responseString);
             }
 
-            // 앞뒤 쌍따옴표 제거
-            String newFileName = responseString.replace("\"", "");
+            String newFileName = objectMapper.readValue(responseString, String.class);
+            if (newFileName == null || newFileName.isBlank()) {
+                throw new RuntimeException("Lambda가 변환된 이미지 키를 반환하지 않았습니다.");
+            }
 
             log.info("AWS Lambda 처리 완료. 변환된 파일명: {}", newFileName);
             return newFileName;
@@ -124,6 +167,52 @@ public class S3Service {
         }
     }
 
+    public void verifyUploadedFile(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            throw new IllegalArgumentException("이미지 파일 키가 필요합니다.");
+        }
+
+        try {
+            HeadObjectRequest request = HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key("temp/" + fileName)
+                    .build();
+            var object = s3Client.headObject(request);
+            if (object.contentLength() == null || object.contentLength() == 0) {
+                throw new IllegalArgumentException("업로드된 이미지 파일이 비어 있습니다.");
+            }
+            if (object.contentLength() > MAX_UPLOAD_SIZE_BYTES) {
+                throw new IllegalArgumentException("이미지 파일은 10MB를 초과할 수 없습니다.");
+            }
+            if (object.contentType() == null
+                    || !ALLOWED_UPLOAD_TYPES.containsValue(object.contentType().toLowerCase())) {
+                throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+            }
+            log.info("업로드 이미지 확인 완료. Bucket={}, Key={}, Size={}",
+                    bucketName, request.key(), object.contentLength());
+        } catch (S3Exception e) {
+            if (e.statusCode() == 404) {
+                throw new IllegalArgumentException("업로드된 이미지 파일을 찾을 수 없습니다.", e);
+            }
+            throw e;
+        }
+    }
+
+    private String getAllowedUploadExtension(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            throw new IllegalArgumentException("이미지 파일 이름이 필요합니다.");
+        }
+        int extensionIndex = fileName.lastIndexOf('.');
+        if (extensionIndex < 0 || extensionIndex == fileName.length() - 1) {
+            throw new IllegalArgumentException("이미지 파일 확장자가 필요합니다.");
+        }
+        String extension = fileName.substring(extensionIndex + 1).toLowerCase();
+        if (!ALLOWED_UPLOAD_TYPES.containsKey(extension)) {
+            throw new IllegalArgumentException("지원하지 않는 이미지 확장자입니다.");
+        }
+        return extension;
+    }
+
     public void deleteFile(String prefix, String key) {
         String sourceKey = prefix + key;
 
@@ -132,40 +221,4 @@ public class S3Service {
                 .key(sourceKey));
     }
 
-    public String uploadImageBytes(byte[] imageBytes, String fileName, String prefix) {
-        // 파일 이름이 중복되지 않도록 UUID 사용
-        String key = UUID.randomUUID() + "_" + fileName;
-        String fullKey = prefix + key;
-
-        // 확장자 인식
-        String contentType = getContentType(fileName);
-
-        // S3에 업로드할 객체 요청 생성
-        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                .bucket(bucketName)
-                .key(fullKey)
-                .contentType(contentType)
-                .contentDisposition("inline")
-                .build();
-
-        // 파일 업로드
-        s3Client.putObject(putObjectRequest, RequestBody.fromBytes(imageBytes));
-
-        return key;
-    }
-
-    private String getContentType(String fileName) {
-        // 파일 이름에서 마지막 '.' 이후의 문자열을 확장자로 간주
-        String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-
-        return switch (extension) {
-            case "jpg", "jpeg" -> "image/jpeg";
-            case "png" -> "image/png";
-            case "gif" -> "image/gif";
-            case "webp" -> "image/webp";
-            default ->
-                // 알려지지 않은 확장자는 일반적인 바이너리 파일 타입으로 처리
-                    "application/octet-stream";
-        };
-    }
 }

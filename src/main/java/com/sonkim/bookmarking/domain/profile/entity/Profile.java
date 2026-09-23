@@ -24,6 +24,9 @@ public class Profile {
     @Column(columnDefinition = "TEXT")
     private String imageKey;
 
+    @Column(length = 1024)
+    private String pendingImageKey;
+
     // 정보 수정일
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
@@ -37,6 +40,10 @@ public class Profile {
     // 이미지 업데이트
     public void updateImageKey(String imageKey) {
         this.imageKey = imageKey;
+    }
+
+    public void updatePendingImageKey(String pendingImageKey) {
+        this.pendingImageKey = pendingImageKey;
     }
 
     // 닉네임 업데이트

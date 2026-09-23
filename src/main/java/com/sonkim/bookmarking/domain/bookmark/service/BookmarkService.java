@@ -2,7 +2,12 @@ package com.sonkim.bookmarking.domain.bookmark.service;
 
 import com.sonkim.bookmarking.common.dto.CursorResultDto;
 import com.sonkim.bookmarking.common.s3.service.S3Service;
-import com.sonkim.bookmarking.common.service.BookmarkCreatedEvent;
+import com.sonkim.bookmarking.common.s3.service.S3FileDeletionRequestedEvent;
+import com.sonkim.bookmarking.common.service.ImageProcessingJob;
+import com.sonkim.bookmarking.common.service.ImageProcessingJobCreatedEvent;
+import com.sonkim.bookmarking.common.service.ImageProcessingJobRepository;
+import com.sonkim.bookmarking.common.util.OpenGraphImageCache;
+import com.sonkim.bookmarking.common.util.OpenGraphImageRefreshService;
 import com.sonkim.bookmarking.domain.bookmark.dto.*;
 import com.sonkim.bookmarking.domain.bookmark.entity.BookmarkTag;
 import com.sonkim.bookmarking.domain.bookmark.repository.BookmarkLikeRepository;
@@ -19,6 +24,7 @@ import com.sonkim.bookmarking.domain.team.entity.Team;
 import com.sonkim.bookmarking.domain.team.enums.Permission;
 import com.sonkim.bookmarking.domain.team.service.TeamMemberService;
 import com.sonkim.bookmarking.domain.team.service.TeamService;
+import com.sonkim.bookmarking.common.util.RemoteImageUrlValidator;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +54,9 @@ public class BookmarkService {
     private final S3Service s3Service;
     private final ApplicationEventPublisher eventPublisher;
     private final TagService tagService;
+    private final ImageProcessingJobRepository imageProcessingJobRepository;
+    private final OpenGraphImageCache openGraphImageCache;
+    private final OpenGraphImageRefreshService openGraphImageRefreshService;
 
     // 북마크 등록
     @Transactional
@@ -72,16 +81,18 @@ public class BookmarkService {
         }
 
         String imageKey = null;
+        String pendingImageKey = null;
         String originalImageUrl = null;
+        boolean useOgImage = false;
 
         if (request.getImageKey() != null && !request.getImageKey().isEmpty()) {
             // 사용자가 직접 이미지를 업로드한 경우
-            // 파일을 temp -> bookmarks로 이동
-            imageKey = s3Service.moveFileToPermanentStorage("bookmarks/", request.getImageKey());
+            s3Service.verifyUploadedFile(request.getImageKey());
+            pendingImageKey = request.getImageKey();
         } else if (request.getOriginalImageUrl() != null && !request.getOriginalImageUrl().isEmpty()) {
-            // OG 이미지 그대로 사용하는 경우
-            // 임시 저장 후 비동기 처리 요청
-            originalImageUrl = request.getOriginalImageUrl();
+            originalImageUrl = RemoteImageUrlValidator.validate(request.getOriginalImageUrl());
+            useOgImage = true;
+            openGraphImageCache.put(request.getUrl(), originalImageUrl);
         }
 
         Bookmark bookmark = Bookmark.builder()
@@ -91,13 +102,21 @@ public class BookmarkService {
                 .url(request.getUrl())
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .originalImageUrl(originalImageUrl)
+                .originalImageUrl(null)
                 .imageKey(imageKey)
+                .pendingImageKey(pendingImageKey)
+                .useOgImage(useOgImage)
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .build();
 
         bookmarkRepository.save(bookmark);
+
+        if (pendingImageKey != null) {
+            ImageProcessingJob job = imageProcessingJobRepository.save(new ImageProcessingJob(
+                    ImageProcessingJob.TargetType.BOOKMARK, bookmark.getId(), pendingImageKey));
+            eventPublisher.publishEvent(new ImageProcessingJobCreatedEvent(job.getId()));
+        }
 
         List<Tag> tags = new ArrayList<>();
         List<String> tagNames = request.getTagNames();
@@ -111,11 +130,6 @@ public class BookmarkService {
                 newBookmarkTags.add(BookmarkTag.builder().bookmark(bookmark).tag(tag).build());
             }
             bookmarkTagRepository.saveAll(newBookmarkTags);
-        }
-
-        // 비동기 작업 호출
-        if (originalImageUrl != null) {
-            eventPublisher.publishEvent(new BookmarkCreatedEvent(bookmark.getId(), originalImageUrl));
         }
 
         // 반환용 DTO 생성
@@ -136,6 +150,11 @@ public class BookmarkService {
     @Transactional(readOnly = true)
     public Bookmark getBookmarkById(Long bookmarkId) {
         return bookmarkRepository.findByIdWithTags(bookmarkId)
+                .orElseThrow(() -> new EntityNotFoundException("북마크를 찾을 수 없습니다. bookmarkId=" + bookmarkId));
+    }
+
+    private Bookmark getBookmarkByIdForImageUpdate(Long bookmarkId) {
+        return bookmarkRepository.findByIdForImageUpdate(bookmarkId)
                 .orElseThrow(() -> new EntityNotFoundException("북마크를 찾을 수 없습니다. bookmarkId=" + bookmarkId));
     }
 
@@ -166,7 +185,8 @@ public class BookmarkService {
     // 북마크 정보 갱신
     @Transactional
     public void updateBookmark(Long userId, Long bookmarkId, BookmarkUpdateDto dto) {
-        Bookmark bookmark = getBookmarkById(bookmarkId);
+        // Lambda 완료 처리와 동일한 비관적 락을 사용해 이미지 변경과 결과 반영을 직렬화한다.
+        Bookmark bookmark = getBookmarkByIdForImageUpdate(bookmarkId);
 
         // 그룹 상태 검증
         teamService.validateGroupIsActive(bookmark.getTeam().getId());
@@ -189,21 +209,34 @@ public class BookmarkService {
             if (dto.getImageKey().isEmpty()) {
                 // 이미지를 삭제하려는 경우
                 bookmark.updateImageKey(null);
+                bookmark.updatePendingImageKey(null);
+                bookmark.updateOriginalImageUrl(null);
+                bookmark.updateUseOgImage(false);
                 if (oldImageKey != null) {
-                    s3Service.deleteFile("bookmarks/", oldImageKey);
+                    eventPublisher.publishEvent(
+                            new S3FileDeletionRequestedEvent("bookmarks/", oldImageKey));
                 }
             } else {
                 // 이미지를 변경하려는 경우
-                String newImageKey = s3Service.moveFileToPermanentStorage("bookmarks/", dto.getImageKey());
-                bookmark.updateImageKey(newImageKey);
-                if (oldImageKey != null) {
-                    s3Service.deleteFile("bookmarks/", oldImageKey);
-                }
+                s3Service.verifyUploadedFile(dto.getImageKey());
+                bookmark.updatePendingImageKey(dto.getImageKey());
+                bookmark.updateOriginalImageUrl(null);
+                bookmark.updateUseOgImage(false);
+                ImageProcessingJob job = imageProcessingJobRepository.save(new ImageProcessingJob(
+                        ImageProcessingJob.TargetType.BOOKMARK, bookmark.getId(), dto.getImageKey()));
+                eventPublisher.publishEvent(new ImageProcessingJobCreatedEvent(job.getId()));
 
-                // 기존 OG 이미지는 삭제
-                if (bookmark.getOriginalImageUrl() != null) {
-                    bookmark.updateOriginalImageUrl(null);
-                }
+            }
+        } else if (dto.getOriginalImageUrl() != null && !dto.getOriginalImageUrl().isEmpty()) {
+            String originalImageUrl = RemoteImageUrlValidator.validate(dto.getOriginalImageUrl());
+            openGraphImageCache.put(bookmark.getUrl(), originalImageUrl);
+            bookmark.updateImageKey(null);
+            bookmark.updatePendingImageKey(null);
+            bookmark.updateOriginalImageUrl(null);
+            bookmark.updateUseOgImage(true);
+            if (oldImageKey != null) {
+                eventPublisher.publishEvent(
+                        new S3FileDeletionRequestedEvent("bookmarks/", oldImageKey));
             }
         }
 
@@ -243,7 +276,8 @@ public class BookmarkService {
     // 북마크 삭제
     @Transactional
     public void deleteBookmark(Long userId, Long bookmarkId) {
-        Bookmark bookmark = getBookmarkById(bookmarkId);
+        // 진행 중인 이미지 변환이 완료되는 시점과 북마크 삭제가 교차하지 않도록 잠근다.
+        Bookmark bookmark = getBookmarkByIdForImageUpdate(bookmarkId);
 
         // 그룹 상태 검증
         teamService.validateGroupIsActive(bookmark.getTeam().getId());
@@ -257,7 +291,10 @@ public class BookmarkService {
         }
 
         // S3 이미지 삭제
-        s3Service.deleteFile("bookmarks/", bookmark.getImageKey());
+        if (bookmark.getImageKey() != null) {
+            eventPublisher.publishEvent(
+                    new S3FileDeletionRequestedEvent("bookmarks/", bookmark.getImageKey()));
+        }
 
         bookmarkRepository.delete(bookmark);
     }
@@ -324,8 +361,17 @@ public class BookmarkService {
     private String getFinalImageUrl(Bookmark bookmark) {
         if (bookmark.getImageKey() != null) {
             return s3Service.generateImageUrl("bookmarks/", bookmark.getImageKey());
-        } else if (bookmark.getOriginalImageUrl() != null) {
-            return bookmark.getOriginalImageUrl();
+        }
+        if (bookmark.isUseOgImage()) {
+            String cachedImageUrl = openGraphImageCache.get(bookmark.getUrl());
+            if (cachedImageUrl == null) {
+                try {
+                    openGraphImageRefreshService.refreshAsync(bookmark.getUrl());
+                } catch (RuntimeException e) {
+                    log.warn("OpenGraph 이미지 비동기 갱신 요청 실패. url={}", bookmark.getUrl(), e);
+                }
+            }
+            return cachedImageUrl;
         }
         return null;
     }

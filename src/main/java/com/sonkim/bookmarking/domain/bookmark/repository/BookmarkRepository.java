@@ -4,10 +4,19 @@ import com.sonkim.bookmarking.domain.bookmark.entity.Bookmark;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import jakarta.persistence.LockModeType;
+
+import java.util.Optional;
 
 @Repository
 public interface BookmarkRepository extends JpaRepository<Bookmark, Long>, BookmarkRepositoryCustom {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select bookmark from Bookmark bookmark where bookmark.id = :id")
+    Optional<Bookmark> findByIdForImageUpdate(Long id);
 
     // 작성자 기준으로 북마크 조회
     Page<Bookmark> findAllByUser_Id(Long userId, Pageable pageable);

@@ -8,6 +8,8 @@ import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkUpdateDto;
 import com.sonkim.bookmarking.domain.bookmark.service.BookmarkService;
 import com.sonkim.bookmarking.domain.bookmark.dto.BookmarkOGDto;
 import com.sonkim.bookmarking.common.util.OGUtil;
+import com.sonkim.bookmarking.common.util.OpenGraphImageCache;
+import com.sonkim.bookmarking.common.util.RemoteImageUrlValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,7 @@ public class BookmarkController {
     private final BookmarkService bookmarkService;
     private final OGUtil ogUtil;
     private final S3Service s3Service;
+    private final OpenGraphImageCache openGraphImageCache;
 
     @Operation(summary = "특정 북마크 상세 정보 조회", description = "특정 북마크의 상세 정보와 좋아요 개수를 조회합니다.")
     @ApiResponses({
@@ -82,6 +85,14 @@ public class BookmarkController {
     public ResponseEntity<BookmarkOGDto> getBookmarkInformation(@RequestParam String url) {
         try {
             BookmarkOGDto info = ogUtil.getOpenGraphData(url);
+            if (info.getImage() != null && !info.getImage().isBlank()) {
+                try {
+                    openGraphImageCache.put(url, RemoteImageUrlValidator.validate(info.getImage()));
+                } catch (IllegalArgumentException e) {
+                    log.warn("OpenGraph 이미지 URL을 캐싱하지 않습니다. pageUrl={}, imageUrl={}",
+                            url, info.getImage(), e);
+                }
+            }
             return ResponseEntity.ok(info);
         } catch (Exception e) {
             // 🔽 🚨 중요: 발생한 예외(e)를 함께 로깅하여 원인을 파악합니다.

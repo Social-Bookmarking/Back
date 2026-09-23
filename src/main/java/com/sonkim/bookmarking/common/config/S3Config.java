@@ -25,6 +25,9 @@ public class S3Config {
     @Value("${cloud.r2.endpoint}")
     private String endpoint;
 
+    @Value("${cloud.r2.bucket}")
+    private String bucketName;
+
     @Value("${aws.lambda.access-key}")
     private String lambdaAccessKey;
 
@@ -38,7 +41,7 @@ public class S3Config {
 
         return S3Client.builder()
                 .region(Region.of("auto"))
-                .endpointOverride(URI.create(endpoint))
+                .endpointOverride(normalizeEndpoint(endpoint, bucketName))
                 .credentialsProvider(provider)
                 .build();
     }
@@ -50,7 +53,7 @@ public class S3Config {
 
         return S3Presigner.builder()
                 .region(Region.of("auto"))
-                .endpointOverride(URI.create(endpoint))
+                .endpointOverride(normalizeEndpoint(endpoint, bucketName))
                 .credentialsProvider(provider)
                 .build();
     }
@@ -64,5 +67,21 @@ public class S3Config {
                 .region(Region.AP_NORTHEAST_2)
                 .credentialsProvider(provider)
                 .build();
+    }
+
+    static URI normalizeEndpoint(String endpoint, String bucketName) {
+        URI endpointUri = URI.create(endpoint);
+        String path = endpointUri.getPath();
+        if (path == null || path.isBlank() || "/".equals(path)) {
+            return endpointUri;
+        }
+
+        String normalizedPath = path.endsWith("/")
+                ? path.substring(0, path.length() - 1)
+                : path;
+        if (normalizedPath.equals("/" + bucketName)) {
+            return URI.create(endpointUri.getScheme() + "://" + endpointUri.getRawAuthority());
+        }
+        return endpointUri;
     }
 }

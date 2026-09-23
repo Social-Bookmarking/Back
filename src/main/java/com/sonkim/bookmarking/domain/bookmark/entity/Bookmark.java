@@ -56,6 +56,13 @@ public class Bookmark {
     // 최종 이미지 파일 키
     private String imageKey;
 
+    @Column(length = 1024)
+    private String pendingImageKey;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean useOgImage = false;
+
     private Double latitude;        // 위도
     private Double longitude;       // 경도
 
@@ -105,7 +112,15 @@ public class Bookmark {
         this.imageKey = imageKey;
     }
 
+    public void updatePendingImageKey(String pendingImageKey) {
+        this.pendingImageKey = pendingImageKey;
+    }
+
     public void updateOriginalImageUrl(String originalImageUrl) {
         this.originalImageUrl = originalImageUrl;
+    }
+
+    public void updateUseOgImage(boolean useOgImage) {
+        this.useOgImage = useOgImage;
     }
 }
